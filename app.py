@@ -105,12 +105,31 @@ def search_employees():
     if company:
         filter_query['company_code'] = company
     
-    # جلب جميع الموظفين المطابقين للفلاتر الأساسية أولاً
-    all_employees = list(mongo.db.employees.find(filter_query))
+    # إضافة فلاتر حالة الجواز والبطاقة لقاعدة البيانات مباشرة
+    if passport_status == 'missing':
+        filter_query['$or'] = filter_query.get('$or', [])
+        if not isinstance(filter_query['$or'], list):
+            filter_query['$or'] = []
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({'$or': [{'pass_no': {'$exists': False}}, {'pass_no': None}, {'pass_no': ''}]})
+    elif passport_status == 'available':
+        filter_query['pass_no'] = {'$exists': True, '$ne': None, '$ne': ''}
     
-    # إضافة معلومات الشركة والوظيفة وتطبيق فلاتر حالة الجواز والبطاقة
-    filtered_results = []
-    for emp in all_employees:
+    if card_status == 'missing':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({'$or': [{'card_no': {'$exists': False}}, {'card_no': None}, {'card_no': ''}]})
+    elif card_status == 'expired':
+        filter_query['card_expiry_date'] = {'$lt': datetime.now()}
+    
+    # حساب pagination
+    skip = (page - 1) * per_page
+    
+    employees = list(mongo.db.employees.find(filter_query).skip(skip).limit(per_page))
+    total = mongo.db.employees.count_documents(filter_query)
+    
+    # إضافة معلومات الشركة والوظيفة
+    results = []
+    for emp in employees:
         # جلب معلومات الشركة
         company_info = mongo.db.companies.find_one({'company_code': emp.get('company_code')})
         # جلب معلومات الوظيفة
@@ -126,27 +145,14 @@ def search_employees():
         if job_info:
             emp_dict['job_eng'] = job_info.get('job_eng', '')
             emp_dict['job_ara'] = job_info.get('job_ara', '')
-        
-        # تطبيق فلاتر حالة الجواز والبطاقة
-        if passport_status and emp_dict['passport_status'] != passport_status:
-            continue
-        if card_status and emp_dict['card_status'] != card_status:
-            continue
             
-        filtered_results.append(emp_dict)
+        results.append(emp_dict)
     
-    # حساب العدد الكامل بعد الفلترة
-    total_filtered = len(filtered_results)
-    
-    # تطبيق pagination على النتائج المفلترة
-    skip = (page - 1) * per_page
-    paginated_results = filtered_results[skip:skip + per_page]
-    
-    pages = (total_filtered + per_page - 1) // per_page
+    pages = (total + per_page - 1) // per_page
     
     return jsonify({
-        'employees': paginated_results,
-        'total': total_filtered,
+        'employees': results,
+        'total': total,
         'pages': pages,
         'current_page': page,
         'has_next': page < pages,

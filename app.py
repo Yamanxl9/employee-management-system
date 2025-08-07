@@ -358,7 +358,94 @@ def test_connection():
     """اختبار الاتصال"""
     return jsonify({'status': 'OK', 'message': 'Server is running with MongoDB'})
 
-# API للتقارير - الوثائق المنتهية
+# API للعرض المختصر للموظفين
+@app.route('/api/employees-summary')
+def employees_summary():
+    """عرض مختصر لجميع الموظفين مع المعلومات الأساسية فقط"""
+    query = request.args.get('query', '').strip()
+    nationality = request.args.get('nationality', '')
+    company = request.args.get('company', '')
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 50))  # عدد أكبر للعرض المختصر
+    
+    # بناء الاستعلام
+    filter_query = {}
+    
+    if query:
+        filter_query['$or'] = [
+            {'staff_name': {'$regex': query, '$options': 'i'}},
+            {'staff_name_ara': {'$regex': query, '$options': 'i'}},
+            {'staff_no': {'$regex': query, '$options': 'i'}}
+        ]
+    
+    if nationality:
+        filter_query['nationality_code'] = nationality
+    
+    if company:
+        filter_query['company_code'] = company
+    
+    # حساب pagination
+    skip = (page - 1) * per_page
+    
+    # جلب البيانات الأساسية فقط
+    employees = list(mongo.db.employees.find(
+        filter_query,
+        {
+            'staff_no': 1,
+            'staff_name': 1,
+            'staff_name_ara': 1,
+            'nationality_code': 1,
+            'company_code': 1,
+            'pass_no': 1,
+            'card_no': 1,
+            'card_expiry_date': 1
+        }
+    ).skip(skip).limit(per_page))
+    
+    total = mongo.db.employees.count_documents(filter_query)
+    
+    # إعداد النتائج المختصرة
+    results = []
+    for emp in employees:
+        # حالة الجواز
+        passport_status = '✅' if emp.get('pass_no') else '❌'
+        
+        # حالة البطاقة
+        if not emp.get('card_no'):
+            card_status = '❌'
+        elif not emp.get('card_expiry_date'):
+            card_status = '⚠️'
+        else:
+            expiry_date = emp['card_expiry_date']
+            if isinstance(expiry_date, str):
+                expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+            
+            if expiry_date < datetime.now():
+                card_status = '🔴'
+            elif expiry_date < datetime.now() + timedelta(days=90):
+                card_status = '🟡'
+            else:
+                card_status = '🟢'
+        
+        results.append({
+            'staff_no': emp.get('staff_no'),
+            'name': emp.get('staff_name_ara') or emp.get('staff_name', ''),
+            'nationality': emp.get('nationality_code', ''),
+            'company': emp.get('company_code', ''),
+            'passport': passport_status,
+            'card': card_status
+        })
+    
+    pages = (total + per_page - 1) // per_page
+    
+    return jsonify({
+        'employees': results,
+        'total': total,
+        'pages': pages,
+        'current_page': page,
+        'has_next': page < pages,
+        'has_prev': page > 1
+    })
 @app.route('/api/reports/expiring-documents')
 def expiring_documents_report():
     days = int(request.args.get('days', 90))

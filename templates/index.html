@@ -149,6 +149,57 @@
             color: white;
         }
         
+        /* العرض المختصر */
+        .summary-view {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .summary-table {
+            width: 100%;
+            margin: 0;
+        }
+        
+        .summary-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 10px;
+            text-align: center;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .summary-table td {
+            padding: 12px 10px;
+            text-align: center;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .summary-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .summary-table tbody tr:nth-child(even) {
+            background-color: #fbfbfb;
+        }
+        
+        .status-icon {
+            font-size: 1.2rem;
+        }
+        
+        .employee-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .employee-number {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
         .nationality-flag {
             width: 20px;
             height: 15px;
@@ -303,9 +354,13 @@
                             <i class="fas fa-search me-2"></i>
                             <span id="searchBtn">بحث</span>
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <button class="btn btn-outline-secondary me-2" onclick="clearFilters()">
                             <i class="fas fa-times me-2"></i>
                             <span id="clearBtn">مسح الفلاتر</span>
+                        </button>
+                        <button class="btn btn-info me-2" onclick="toggleViewMode()" id="viewModeBtn">
+                            <i class="fas fa-list me-2"></i>
+                            <span id="viewModeText">عرض مختصر</span>
                         </button>
                     </div>
                 </div>
@@ -554,6 +609,14 @@
                 cardStatusLabel: 'حالة البطاقة',
                 searchBtn: 'بحث',
                 clearBtn: 'مسح الفلاتر',
+                viewModeText: 'عرض مختصر',
+                summaryViewText: 'عرض تفصيلي',
+                employeeNoHeader: 'رقم الموظف',
+                nameHeader: 'الاسم',
+                nationalityHeader: 'الجنسية',
+                companyHeader: 'الشركة',
+                passportHeader: 'الجواز',
+                cardHeader: 'البطاقة',
                 allNationalitiesOption: 'جميع الجنسيات',
                 allCompaniesOption: 'جميع الشركات',
                 allPassportStatusOption: 'جميع الحالات',
@@ -623,6 +686,14 @@
                 cardStatusLabel: 'Card Status',
                 searchBtn: 'Search',
                 clearBtn: 'Clear Filters',
+                viewModeText: 'Summary View',
+                summaryViewText: 'Detailed View',
+                employeeNoHeader: 'Employee No.',
+                nameHeader: 'Name',
+                nationalityHeader: 'Nationality',
+                companyHeader: 'Company',
+                passportHeader: 'Passport',
+                cardHeader: 'Card',
                 allNationalitiesOption: 'All Nationalities',
                 allCompaniesOption: 'All Companies',
                 allPassportStatusOption: 'All Status',
@@ -876,6 +947,24 @@
             }
         }
 
+        // متغيرات العرض
+        let isDetailedView = true; // العرض التفصيلي افتراضياً
+        
+        // تبديل طريقة العرض
+        function toggleViewMode() {
+            isDetailedView = !isDetailedView;
+            const viewModeBtn = document.getElementById('viewModeText');
+            
+            if (isDetailedView) {
+                viewModeBtn.textContent = translations[currentLanguage].viewModeText;
+            } else {
+                viewModeBtn.textContent = translations[currentLanguage].summaryViewText;
+            }
+            
+            // إعادة تحميل النتائج بطريقة العرض الجديدة
+            searchEmployees();
+        }
+
         // تحميل الموظفين تلقائياً
         async function loadEmployees(page = 1) {
             currentPage = page;
@@ -947,10 +1036,12 @@
                     passport_status: document.getElementById('passportStatusFilter').value,
                     card_status: document.getElementById('cardStatusFilter').value,
                     page: currentPage,
-                    per_page: 20
+                    per_page: isDetailedView ? 20 : 50
                 });
                 
-                const response = await fetch(`/api/search?${params}`);
+                // اختيار API حسب طريقة العرض
+                const apiEndpoint = isDetailedView ? '/api/search' : '/api/employees-summary';
+                const response = await fetch(`${apiEndpoint}?${params}`);
                 const data = await response.json();
                 
                 // إخفاء مؤشر التحميل
@@ -968,7 +1059,11 @@
                 }
                 
                 // عرض النتائج
-                displayEmployees(data);
+                if (isDetailedView) {
+                    displayDetailedEmployees(data);
+                } else {
+                    displaySummaryEmployees(data);
+                }
                 
             } catch (error) {
                 loadingIndicator.style.display = 'none';
@@ -982,8 +1077,8 @@
             }
         }
 
-        // عرض الموظفين
-        function displayEmployees(data) {
+        // عرض الموظفين بالتفصيل
+        function displayDetailedEmployees(data) {
             const resultsContainer = document.getElementById('resultsContainer');
             
             let resultsHTML = `
@@ -1078,6 +1173,52 @@
                 'no_expiry': 'No Expiry'
             };
             return statusMap[status] || status;
+        }
+
+        // عرض الموظفين بشكل مختصر
+        function displaySummaryEmployees(data) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            
+            let resultsHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5><i class="fas fa-list me-2"></i>${currentLanguage === 'ar' ? 'عرض مختصر' : 'Summary View'} (${data.total} ${currentLanguage === 'ar' ? 'موظف' : 'employees'})</h5>
+                </div>
+                <div class="summary-view">
+                    <table class="summary-table table mb-0">
+                        <thead>
+                            <tr>
+                                <th>${translations[currentLanguage].employeeNoHeader}</th>
+                                <th>${translations[currentLanguage].nameHeader}</th>
+                                <th>${translations[currentLanguage].nationalityHeader}</th>
+                                <th>${translations[currentLanguage].companyHeader}</th>
+                                <th>${translations[currentLanguage].passportHeader}</th>
+                                <th>${translations[currentLanguage].cardHeader}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            data.employees.forEach(employee => {
+                resultsHTML += `
+                    <tr>
+                        <td class="employee-number">${employee.staff_no}</td>
+                        <td class="employee-name">${employee.name}</td>
+                        <td>${employee.nationality}</td>
+                        <td>${employee.company}</td>
+                        <td class="status-icon">${employee.passport}</td>
+                        <td class="status-icon">${employee.card}</td>
+                    </tr>
+                `;
+            });
+            
+            resultsHTML += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            resultsContainer.innerHTML = resultsHTML;
+            displayPagination(data);
         }
 
         // عرض الـ pagination

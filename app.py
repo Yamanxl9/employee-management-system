@@ -193,6 +193,8 @@ def add_employee():
 @app.route('/api/employees/<staff_no>', methods=['PUT'])
 def update_employee(staff_no):
     try:
+        # تحويل staff_no إلى integer للبحث
+        staff_no_int = int(staff_no)
         data = request.get_json()
         
         # تحويل تاريخ انتهاء البطاقة إذا كان موجوداً
@@ -206,7 +208,7 @@ def update_employee(staff_no):
         
         # تحديث الموظف
         result = mongo.db.employees.update_one(
-            {'staff_no': staff_no},
+            {'staff_no': staff_no_int},
             {'$set': data}
         )
         
@@ -214,7 +216,7 @@ def update_employee(staff_no):
             return jsonify({'error': 'الموظف غير موجود'}), 404
         
         # جلب الموظف المحدث
-        employee = mongo.db.employees.find_one({'staff_no': staff_no})
+        employee = mongo.db.employees.find_one({'staff_no': staff_no_int})
         emp_dict = serialize_doc(employee)
         emp_dict.update(get_employee_status(employee))
         
@@ -227,26 +229,39 @@ def update_employee(staff_no):
 @app.route('/api/employees/<staff_no>', methods=['DELETE'])
 def delete_employee(staff_no):
     try:
-        result = mongo.db.employees.delete_one({'staff_no': staff_no})
+        # تحويل staff_no إلى integer للبحث
+        staff_no_int = int(staff_no)
+        result = mongo.db.employees.delete_one({'staff_no': staff_no_int})
         
         if result.deleted_count == 0:
             return jsonify({'error': 'الموظف غير موجود'}), 404
         
         return jsonify({'message': 'تم حذف الموظف بنجاح'})
         
+    except ValueError:
+        return jsonify({'error': 'رقم الموظف غير صحيح'}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 # API للحصول على بيانات موظف محدد
 @app.route('/api/employees/<staff_no>')
 def get_employee(staff_no):
-    employee = mongo.db.employees.find_one({'staff_no': staff_no})
-    if not employee:
-        return jsonify({'error': 'الموظف غير موجود'}), 404
-    
-    emp_dict = serialize_doc(employee)
-    emp_dict.update(get_employee_status(employee))
-    return jsonify(emp_dict)
+    try:
+        # تحويل staff_no إلى integer للبحث
+        staff_no_int = int(staff_no)
+        employee = mongo.db.employees.find_one({'staff_no': staff_no_int})
+        
+        if not employee:
+            return jsonify({'error': 'الموظف غير موجود'}), 404
+        
+        emp_dict = serialize_doc(employee)
+        emp_dict.update(get_employee_status(employee))
+        return jsonify(emp_dict)
+        
+    except ValueError:
+        return jsonify({'error': 'رقم الموظف غير صحيح'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # API للإحصائيات
 @app.route('/api/statistics')

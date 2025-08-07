@@ -1134,6 +1134,12 @@
         async function editEmployee(staffNo) {
             try {
                 const response = await fetch(`/api/employees/${staffNo}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'فشل في تحميل بيانات الموظف');
+                }
+                
                 const employee = await response.json();
                 
                 isEditMode = true;
@@ -1141,13 +1147,13 @@
                 document.getElementById('modalTitle').textContent = translations[currentLanguage].editModalTitle;
                 
                 // ملء البيانات
-                document.getElementById('staffNo').value = employee.staff_no;
+                document.getElementById('staffNo').value = employee.staff_no || '';
                 document.getElementById('staffNo').disabled = true;
-                document.getElementById('staffName').value = employee.staff_name;
-                document.getElementById('staffNameAra').value = employee.staff_name_ara;
-                document.getElementById('jobCode').value = employee.job_code;
-                document.getElementById('nationalityCode').value = employee.nationality_code;
-                document.getElementById('companyCode').value = employee.company_code;
+                document.getElementById('staffName').value = employee.staff_name || '';
+                document.getElementById('staffNameAra').value = employee.staff_name_ara || '';
+                document.getElementById('jobCode').value = employee.job_code || '';
+                document.getElementById('nationalityCode').value = employee.nationality_code || '';
+                document.getElementById('companyCode').value = employee.company_code || '';
                 document.getElementById('passNo').value = employee.pass_no || '';
                 document.getElementById('cardNo').value = employee.card_no || '';
                 document.getElementById('cardExpiryDate').value = employee.card_expiry_date || '';
@@ -1156,7 +1162,7 @@
                 new bootstrap.Modal(document.getElementById('employeeModal')).show();
                 
             } catch (error) {
-                alert(currentLanguage === 'ar' ? 'خطأ في تحميل بيانات الموظف' : 'Error loading employee data');
+                alert(currentLanguage === 'ar' ? 'خطأ في تحميل بيانات الموظف: ' + error.message : 'Error loading employee data: ' + error.message);
                 console.error('Error:', error);
             }
         }

@@ -105,15 +105,12 @@ def search_employees():
     if company:
         filter_query['company_code'] = company
     
-    # حساب pagination
-    skip = (page - 1) * per_page
+    # جلب جميع الموظفين المطابقين للفلاتر الأساسية أولاً
+    all_employees = list(mongo.db.employees.find(filter_query))
     
-    employees = list(mongo.db.employees.find(filter_query).skip(skip).limit(per_page))
-    total = mongo.db.employees.count_documents(filter_query)
-    
-    # إضافة معلومات الشركة والوظيفة
-    results = []
-    for emp in employees:
+    # إضافة معلومات الشركة والوظيفة وتطبيق فلاتر حالة الجواز والبطاقة
+    filtered_results = []
+    for emp in all_employees:
         # جلب معلومات الشركة
         company_info = mongo.db.companies.find_one({'company_code': emp.get('company_code')})
         # جلب معلومات الوظيفة
@@ -136,13 +133,20 @@ def search_employees():
         if card_status and emp_dict['card_status'] != card_status:
             continue
             
-        results.append(emp_dict)
+        filtered_results.append(emp_dict)
     
-    pages = (total + per_page - 1) // per_page
+    # حساب العدد الكامل بعد الفلترة
+    total_filtered = len(filtered_results)
+    
+    # تطبيق pagination على النتائج المفلترة
+    skip = (page - 1) * per_page
+    paginated_results = filtered_results[skip:skip + per_page]
+    
+    pages = (total_filtered + per_page - 1) // per_page
     
     return jsonify({
-        'employees': results,
-        'total': total,
+        'employees': paginated_results,
+        'total': total_filtered,
         'pages': pages,
         'current_page': page,
         'has_next': page < pages,

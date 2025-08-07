@@ -119,7 +119,35 @@ def search_employees():
         filter_query['$and'] = filter_query.get('$and', [])
         filter_query['$and'].append({'$or': [{'card_no': {'$exists': False}}, {'card_no': None}, {'card_no': ''}]})
     elif card_status == 'expired':
-        filter_query['card_expiry_date'] = {'$lt': datetime.now()}
+        # البطاقات المنتهية الصلاحية (لها تاريخ انتهاء ومنتهية)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'card_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+        })
+    elif card_status == 'expiring_soon':
+        # البطاقات التي ستنتهي خلال 90 يوم
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'card_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+        })
+    elif card_status == 'valid':
+        # البطاقات السارية (لها تاريخ انتهاء ولا تزال سارية)
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'card_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
+        })
+    elif card_status == 'no_expiry':
+        # البطاقات بدون تاريخ انتهاء (لها رقم بطاقة ولكن لا يوجد تاريخ انتهاء)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            '$or': [{'card_expiry_date': {'$exists': False}}, {'card_expiry_date': None}]
+        })
     
     # حساب pagination
     skip = (page - 1) * per_page
@@ -365,10 +393,12 @@ def employees_summary():
     query = request.args.get('query', '').strip()
     nationality = request.args.get('nationality', '')
     company = request.args.get('company', '')
+    passport_status = request.args.get('passport_status', '')
+    card_status = request.args.get('card_status', '')
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 50))  # عدد أكبر للعرض المختصر
     
-    # بناء الاستعلام
+    # بناء الاستعلام (نفس منطق البحث الرئيسي)
     filter_query = {}
     
     if query:
@@ -383,6 +413,50 @@ def employees_summary():
     
     if company:
         filter_query['company_code'] = company
+    
+    # إضافة فلاتر حالة الجواز والبطاقة (نفس منطق البحث الرئيسي)
+    if passport_status == 'missing':
+        filter_query['$or'] = filter_query.get('$or', [])
+        if not isinstance(filter_query['$or'], list):
+            filter_query['$or'] = []
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({'$or': [{'pass_no': {'$exists': False}}, {'pass_no': None}, {'pass_no': ''}]})
+    elif passport_status == 'available':
+        filter_query['pass_no'] = {'$exists': True, '$ne': None, '$ne': ''}
+    
+    if card_status == 'missing':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({'$or': [{'card_no': {'$exists': False}}, {'card_no': None}, {'card_no': ''}]})
+    elif card_status == 'expired':
+        # البطاقات المنتهية الصلاحية (لها تاريخ انتهاء ومنتهية)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'card_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+        })
+    elif card_status == 'expiring_soon':
+        # البطاقات التي ستنتهي خلال 90 يوم
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'card_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+        })
+    elif card_status == 'valid':
+        # البطاقات السارية (لها تاريخ انتهاء ولا تزال سارية)
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'card_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
+        })
+    elif card_status == 'no_expiry':
+        # البطاقات بدون تاريخ انتهاء (لها رقم بطاقة ولكن لا يوجد تاريخ انتهاء)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+            '$or': [{'card_expiry_date': {'$exists': False}}, {'card_expiry_date': None}]
+        })
     
     # حساب pagination
     skip = (page - 1) * per_page

@@ -342,6 +342,7 @@
                             <option value="valid" id="cardValidOption">سارية</option>
                             <option value="expiring_soon" id="cardExpiringSoonOption">تنتهي قريباً</option>
                             <option value="expired" id="cardExpiredOption">منتهية</option>
+                            <option value="no_expiry" id="cardNoExpiryOption">بدون تاريخ انتهاء</option>
                             <option value="missing" id="cardMissingOption">غير متوفرة</option>
                         </select>
                     </div>
@@ -526,6 +527,7 @@
                 cardValidOption: 'سارية',
                 cardExpiringSoonOption: 'تنتهي قريباً',
                 cardExpiredOption: 'منتهية',
+                cardNoExpiryOption: 'بدون تاريخ انتهاء',
                 cardMissingOption: 'غير متوفرة',
                 loadingText: 'جاري التحميل...',
                 searchingText: 'جاري البحث...',
@@ -588,6 +590,7 @@
                 cardValidOption: 'Valid',
                 cardExpiringSoonOption: 'Expiring Soon',
                 cardExpiredOption: 'Expired',
+                cardNoExpiryOption: 'No Expiry Date',
                 cardMissingOption: 'Missing',
                 loadingText: 'Loading...',
                 searchingText: 'Searching...',
@@ -710,6 +713,7 @@
             document.getElementById('cardValidOption').textContent = t.cardValidOption;
             document.getElementById('cardExpiringSoonOption').textContent = t.cardExpiringSoonOption;
             document.getElementById('cardExpiredOption').textContent = t.cardExpiredOption;
+            document.getElementById('cardNoExpiryOption').textContent = t.cardNoExpiryOption;
             document.getElementById('cardMissingOption').textContent = t.cardMissingOption;
             
             // تحديث المودال

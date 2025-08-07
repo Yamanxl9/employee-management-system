@@ -107,9 +107,6 @@ def search_employees():
     
     # إضافة فلاتر حالة الجواز والبطاقة لقاعدة البيانات مباشرة
     if passport_status == 'missing':
-        filter_query['$or'] = filter_query.get('$or', [])
-        if not isinstance(filter_query['$or'], list):
-            filter_query['$or'] = []
         filter_query['$and'] = filter_query.get('$and', [])
         filter_query['$and'].append({'$or': [{'pass_no': {'$exists': False}}, {'pass_no': None}, {'pass_no': ''}]})
     elif passport_status == 'available':
@@ -416,9 +413,6 @@ def employees_summary():
     
     # إضافة فلاتر حالة الجواز والبطاقة (نفس منطق البحث الرئيسي)
     if passport_status == 'missing':
-        filter_query['$or'] = filter_query.get('$or', [])
-        if not isinstance(filter_query['$or'], list):
-            filter_query['$or'] = []
         filter_query['$and'] = filter_query.get('$and', [])
         filter_query['$and'].append({'$or': [{'pass_no': {'$exists': False}}, {'pass_no': None}, {'pass_no': ''}]})
     elif passport_status == 'available':

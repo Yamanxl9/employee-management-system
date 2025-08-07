@@ -707,6 +707,92 @@ def new_employees_report():
     
     return jsonify(results)
 
+# API تصدير النتائج المفلترة
+@app.route('/api/export-filtered-results', methods=['POST'])
+def export_filtered_results():
+    """تصدير النتائج المفلترة كملف Excel"""
+    try:
+        data = request.get_json()
+        employees = data.get('employees', [])
+        filters = data.get('filters', {})
+        total = data.get('total', 0)
+        
+        if not employees:
+            return jsonify({'error': 'لا توجد بيانات للتصدير'}), 400
+        
+        # إعداد البيانات للتصدير
+        report_data = []
+        for emp in employees:
+            # جلب معلومات الشركة والوظيفة
+            company_info = mongo.db.companies.find_one({'company_code': emp.get('company_code')})
+            job_info = mongo.db.jobs.find_one({'job_code': emp.get('job_code')})
+            
+            report_data.append({
+                'رقم الموظف': emp.get('staff_no', ''),
+                'الاسم بالعربية': emp.get('staff_name_ara', ''),
+                'الاسم بالإنجليزية': emp.get('staff_name', ''),
+                'الوظيفة': job_info.get('job_ara', '') if job_info else '',
+                'الشركة': company_info.get('company_name_ara', '') if company_info else '',
+                'الجنسية': emp.get('nationality_code', ''),
+                'رقم الجواز': emp.get('pass_no', 'غير متوفر'),
+                'حالة الجواز': emp.get('passport_text', ''),
+                'رقم البطاقة': emp.get('card_no', 'غير متوفرة'),
+                'حالة البطاقة': emp.get('card_text', ''),
+                'تاريخ انتهاء البطاقة': emp.get('card_expiry_date', 'غير محدد'),
+                'تاريخ الإنشاء': emp.get('create_date_time', '')
+            })
+        
+        # إنشاء DataFrame
+        df = pd.DataFrame(report_data)
+        
+        # إنشاء ملف Excel في الذاكرة
+        output = io.BytesIO()
+        try:
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                # كتابة البيانات
+                df.to_excel(writer, sheet_name='بيانات الموظفين', index=False)
+                
+                # إضافة معلومات الفلتر
+                filter_info = []
+                if filters.get('query'):
+                    filter_info.append(f"البحث: {filters['query']}")
+                if filters.get('nationality'):
+                    filter_info.append(f"الجنسية: {filters['nationality']}")
+                if filters.get('company'):
+                    filter_info.append(f"الشركة: {filters['company']}")
+                if filters.get('passport_status'):
+                    filter_info.append(f"حالة الجواز: {filters['passport_status']}")
+                if filters.get('card_status'):
+                    filter_info.append(f"حالة البطاقة: {filters['card_status']}")
+                
+                # إضافة ورقة معلومات التقرير
+                summary_data = [
+                    ['إجمالي النتائج', total],
+                    ['تاريخ التقرير', datetime.now().strftime('%Y-%m-%d %H:%M')],
+                    ['الفلاتر المطبقة', ' | '.join(filter_info) if filter_info else 'لا توجد فلاتر']
+                ]
+                
+                summary_df = pd.DataFrame(summary_data, columns=['البيان', 'القيمة'])
+                summary_df.to_excel(writer, sheet_name='معلومات التقرير', index=False)
+                
+        except Exception as e:
+            return jsonify({'error': f'خطأ في إنشاء ملف Excel: {str(e)}'}), 500
+            
+        output.seek(0)
+        
+        # إرسال الملف
+        filename = f"تقرير_موظفين_مفلتر_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # API تصدير التقارير
 @app.route('/api/export-report', methods=['POST'])
 def export_report():

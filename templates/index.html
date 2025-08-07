@@ -362,6 +362,10 @@
                             <i class="fas fa-list me-2"></i>
                             <span id="viewModeText">عرض مختصر</span>
                         </button>
+                        <button class="btn btn-success" onclick="exportFilteredResults()">
+                            <i class="fas fa-file-excel me-2"></i>
+                            <span id="exportBtn">تصدير النتائج</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -617,6 +621,7 @@
                 companyHeader: 'الشركة',
                 passportHeader: 'الجواز',
                 cardHeader: 'البطاقة',
+                exportBtn: 'تصدير النتائج',
                 allNationalitiesOption: 'جميع الجنسيات',
                 allCompaniesOption: 'جميع الشركات',
                 allPassportStatusOption: 'جميع الحالات',
@@ -694,6 +699,7 @@
                 companyHeader: 'Company',
                 passportHeader: 'Passport',
                 cardHeader: 'Card',
+                exportBtn: 'Export Results',
                 allNationalitiesOption: 'All Nationalities',
                 allCompaniesOption: 'All Companies',
                 allPassportStatusOption: 'All Status',
@@ -1380,6 +1386,80 @@
                 } else {
                     const error = await response.json();
                     alert(error.error || (currentLanguage === 'ar' ? 'خطأ في حذف الموظف' : 'Error deleting employee'));
+                }
+            } catch (error) {
+                alert(currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error');
+                console.error('Error:', error);
+            }
+        }
+
+        // تصدير النتائج المفلترة
+        async function exportFilteredResults() {
+            try {
+                // جمع معايير الفلترة الحالية
+                const filters = {
+                    query: document.getElementById('searchQuery').value,
+                    nationality: document.getElementById('nationalityFilter').value,
+                    company: document.getElementById('companyFilter').value,
+                    passport_status: document.getElementById('passportStatusFilter').value,
+                    card_status: document.getElementById('cardStatusFilter').value
+                };
+
+                // إرسال طلب للحصول على جميع النتائج المفلترة (بدون pagination)
+                const params = new URLSearchParams(filters);
+                params.set('page', '1');
+                params.set('per_page', '10000'); // رقم كبير للحصول على جميع النتائج
+
+                const response = await fetch(`/api/search?${params}`);
+                const data = await response.json();
+
+                if (data.employees.length === 0) {
+                    alert(currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير' : 'No results to export');
+                    return;
+                }
+
+                // إرسال البيانات لAPI التصدير
+                const exportResponse = await fetch('/api/export-filtered-results', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        employees: data.employees,
+                        filters: filters,
+                        total: data.total
+                    })
+                });
+
+                if (exportResponse.ok) {
+                    // تحميل الملف
+                    const blob = await exportResponse.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    
+                    // إنشاء اسم الملف
+                    const date = new Date().toISOString().slice(0, 10);
+                    let filename = `تقرير_الموظفين_${date}.xlsx`;
+                    
+                    // إضافة معلومات الفلتر لاسم الملف
+                    if (filters.query) filename = `تقرير_بحث_${filters.query}_${date}.xlsx`;
+                    else if (filters.nationality) filename = `تقرير_جنسية_${filters.nationality}_${date}.xlsx`;
+                    else if (filters.company) filename = `تقرير_شركة_${filters.company}_${date}.xlsx`;
+                    else if (filters.passport_status) filename = `تقرير_جوازات_${filters.passport_status}_${date}.xlsx`;
+                    else if (filters.card_status) filename = `تقرير_بطاقات_${filters.card_status}_${date}.xlsx`;
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    alert(currentLanguage === 'ar' ? 'تم تصدير التقرير بنجاح' : 'Report exported successfully');
+                } else {
+                    const error = await exportResponse.json();
+                    alert(error.error || (currentLanguage === 'ar' ? 'خطأ في تصدير التقرير' : 'Error exporting report'));
                 }
             } catch (error) {
                 alert(currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error');

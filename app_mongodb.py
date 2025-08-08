@@ -135,6 +135,7 @@ def login_page():
 # الصفحة الرئيسية للنظام (بعد تسجيل الدخول)
 @app.route('/dashboard')
 def dashboard():
+    # التحقق سيتم في JavaScript في الصفحة نفسها
     return render_template('index.html')
 
 # API تسجيل الدخول

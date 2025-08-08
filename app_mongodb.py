@@ -125,7 +125,8 @@ def init_admin_user():
 # الصفحة الرئيسية - توجيه للـ login دائماً
 @app.route('/')
 def index():
-    return redirect(url_for('login_page'))
+    # سيتم التحقق من localStorage في JavaScript وإعادة التوجيه المناسب
+    return render_template('index.html')
 
 # صفحة تسجيل الدخول
 @app.route('/login')

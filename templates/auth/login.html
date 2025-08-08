@@ -415,7 +415,7 @@
                     localStorage.setItem('user', JSON.stringify(result.user));
                     
                     // توجيه للصفحة الرئيسية
-                    window.location.href = '/dashboard';
+                    window.location.href = '/';
                 } else {
                     // فشل تسجيل الدخول
                     showError(result.error || 'خطأ في تسجيل الدخول');
@@ -433,7 +433,7 @@
             const token = localStorage.getItem('authToken');
             if (token) {
                 // إذا كان المستخدم مسجل دخول مسبقاً، توجيه للصفحة الرئيسية
-                window.location.href = '/dashboard';
+                window.location.href = '/';
             }
         });
 

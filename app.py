@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from flask_pymongo import PyMongo
 from datetime import datetime, timedelta
 import pandas as pd
 import io
 import os
 import json
+import jwt
+from functools import wraps
 from dotenv import load_dotenv
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -72,13 +74,135 @@ def get_employee_status(employee):
         'card_class': card_class
     }
 
+# دوال المصادقة والحماية
+def generate_token(user_id):
+    """توليد JWT token للمستخدم"""
+    payload = {
+        'user_id': str(user_id),
+        'exp': datetime.utcnow() + timedelta(days=7)  # صالح لمدة أسبوع
+    }
+    return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+
+def verify_token(token):
+    """التحقق من صحة JWT token"""
+    try:
+        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        return payload['user_id']
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+def require_auth(f):
+    """decorator للتحقق من تسجيل الدخول"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if token and token.startswith('Bearer '):
+            token = token[7:]  # إزالة "Bearer "
+            user_id = verify_token(token)
+            if user_id:
+                request.current_user_id = user_id
+                return f(*args, **kwargs)
+        
+        return jsonify({'error': 'تسجيل الدخول مطلوب'}), 401
+    return decorated_function
+
+def init_admin_user():
+    """إنشاء مستخدم إداري افتراضي"""
+    admin = mongo.db.users.find_one({'username': 'admin'})
+    if not admin:
+        admin_data = {
+            'username': 'admin',
+            'password': generate_password_hash('admin123'),
+            'role': 'admin',
+            'created_at': datetime.now()
+        }
+        mongo.db.users.insert_one(admin_data)
+        print("تم إنشاء المستخدم الإداري: admin / admin123")
+
 # الصفحة الرئيسية
 @app.route('/')
 def index():
+    # السماح بالوصول للصفحة الرئيسية، والتحقق من المصادقة سيتم في JavaScript
     return render_template('index.html')
+
+# صفحة تسجيل الدخول
+@app.route('/login')
+def login_page():
+    return render_template('auth/login.html')
+
+# API تسجيل الدخول
+@app.route('/api/login', methods=['POST'])
+def login():
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        
+        if not username or not password:
+            return jsonify({'error': 'اسم المستخدم وكلمة المرور مطلوبان'}), 400
+        
+        # البحث عن المستخدم
+        user = mongo.db.users.find_one({'username': username})
+        
+        if not user or not check_password_hash(user['password'], password):
+            return jsonify({'error': 'اسم المستخدم أو كلمة المرور غير صحيحة'}), 401
+        
+        # توليد JWT token
+        token = generate_token(user['_id'])
+        
+        # إعداد بيانات المستخدم للإرجاع (بدون كلمة المرور)
+        user_data = {
+            'id': str(user['_id']),
+            'username': user['username'],
+            'role': user.get('role', 'user')
+        }
+        
+        return jsonify({
+            'token': token,
+            'user': user_data,
+            'message': 'تم تسجيل الدخول بنجاح'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': 'خطأ في الخادم'}), 500
+
+# API تسجيل الخروج
+@app.route('/api/logout', methods=['POST'])
+@require_auth
+def logout():
+    return jsonify({'message': 'تم تسجيل الخروج بنجاح'})
+
+# API للتحقق من صحة Token
+@app.route('/api/verify-token', methods=['POST'])
+def verify_token_route():
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        
+        if not token:
+            return jsonify({'valid': False}), 400
+            
+        user_id = verify_token(token)
+        if user_id:
+            user = mongo.db.users.find_one({'_id': ObjectId(user_id)})
+            if user:
+                user_data = {
+                    'id': str(user['_id']),
+                    'username': user['username'],
+                    'role': user.get('role', 'user')
+                }
+                return jsonify({'valid': True, 'user': user_data})
+        
+        return jsonify({'valid': False}), 401
+        
+    except Exception as e:
+        return jsonify({'valid': False}), 500
 
 # API للبحث عن الموظفين
 @app.route('/api/search')
+@require_auth
 def search_employees():
     query = request.args.get('query', '').strip()
     nationality = request.args.get('nationality', '')
@@ -186,6 +310,7 @@ def search_employees():
 
 # API لإضافة موظف جديد
 @app.route('/api/employees', methods=['POST'])
+@require_auth
 def add_employee():
     try:
         data = request.get_json()
@@ -226,6 +351,7 @@ def add_employee():
 
 # API لتحديث بيانات موظف
 @app.route('/api/employees/<staff_no>', methods=['PUT'])
+@require_auth
 def update_employee(staff_no):
     try:
         data = request.get_json()
@@ -281,6 +407,7 @@ def update_employee(staff_no):
 
 # API لحذف موظف
 @app.route('/api/employees/<staff_no>', methods=['DELETE'])
+@require_auth
 def delete_employee(staff_no):
     try:
         # البحث بـ string أولاً (النوع الصحيح في MongoDB)
@@ -304,6 +431,7 @@ def delete_employee(staff_no):
 
 # API للحصول على بيانات موظف محدد
 @app.route('/api/employees/<staff_no>')
+@require_auth
 def get_employee(staff_no):
     try:
         # البحث بـ string أولاً (النوع الصحيح في MongoDB)
@@ -329,6 +457,7 @@ def get_employee(staff_no):
 
 # API للإحصائيات
 @app.route('/api/statistics')
+@require_auth
 def get_statistics():
     total_employees = mongo.db.employees.count_documents({})
     
@@ -398,6 +527,7 @@ def get_statistics():
 
 # API للحصول على قوائم الفلاتر
 @app.route('/api/filters')
+@require_auth
 def get_filters():
     nationalities = mongo.db.employees.distinct('nationality_code')
     companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, '_id': 0}))
@@ -546,6 +676,7 @@ def employees_summary():
 
 # API تصدير النتائج المفلترة
 @app.route('/api/export-filtered-results', methods=['POST'])
+@require_auth
 def export_filtered_results():
     """تصدير النتائج المفلترة كملف Excel"""
     try:
@@ -676,6 +807,9 @@ def load_initial_data():
     
     mongo.db.jobs.insert_many(jobs_data)
     print("تم تحميل بيانات الشركات والوظائف بنجاح في MongoDB!")
+    
+    # إنشاء المستخدم الإداري
+    init_admin_user()
 
 if __name__ == '__main__':
     # تحميل البيانات الأولية

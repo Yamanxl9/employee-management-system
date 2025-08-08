@@ -122,10 +122,9 @@ def init_admin_user():
         print("تم إنشاء المستخدم الإداري: admin / admin123")
 
 # الصفحة الرئيسية
+# الصفحة الرئيسية - توجيه للـ login دائماً
 @app.route('/')
 def index():
-    # إعادة توجيه مباشرة لصفحة تسجيل الدخول
-    # سيتم التحقق من المصادقة في الـ JavaScript
     return redirect(url_for('login_page'))
 
 # صفحة تسجيل الدخول

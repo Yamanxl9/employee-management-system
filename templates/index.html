@@ -13,14 +13,16 @@
             font-family: 'Tajawal', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            padding: 10px;
         }
         
         .main-container {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            margin: 20px;
-            padding: 30px;
+            margin: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
         }
         
         .header-section {
@@ -49,6 +51,29 @@
         .language-toggle:hover {
             background: rgba(255, 255, 255, 0.3);
             color: white;
+            transform: translateY(-1px);
+        }
+        
+        .logout-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(220, 53, 69, 0.8);
+            border: 1px solid rgba(220, 53, 69, 0.9);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            min-width: 100px;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(220, 53, 69, 1);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
         }
         
         .search-section {
@@ -125,28 +150,36 @@
             background: linear-gradient(45deg, #667eea, #764ba2);
             border: none;
             border-radius: 8px;
-            padding: 10px 30px;
+            padding: 12px 30px;
             color: white;
-            font-weight: 500;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
         }
         
         .btn-search:hover {
             background: linear-gradient(45deg, #5a6fd8, #6a4190);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
         }
         
         .btn-add {
             background: linear-gradient(45deg, #28a745, #20c997);
             border: none;
             border-radius: 8px;
-            padding: 10px 30px;
+            padding: 12px 30px;
             color: white;
-            font-weight: 500;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
         }
         
         .btn-add:hover {
             background: linear-gradient(45deg, #218838, #1aa179);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
         }
         
         /* العرض المختصر */
@@ -239,8 +272,43 @@
             left: 15px;
         }
         
+        .english .logout-btn {
+            left: auto;
+            right: 15px;
+        }
+        
         .english .action-buttons {
             justify-content: start;
+        }
+        
+        /* تحسينات للأجهزة المحمولة */
+        @media (max-width: 768px) {
+            .language-toggle, .logout-btn {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                margin: 5px;
+                display: inline-block;
+                width: auto;
+                min-width: 80px;
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            .header-section {
+                text-align: center;
+                padding: 15px;
+            }
+            
+            .main-container {
+                margin: 5px;
+                padding: 15px;
+            }
+            
+            .stats-card {
+                margin-bottom: 15px;
+            }
         }
     </style>
 </head>
@@ -253,9 +321,9 @@
                     <i class="fas fa-language me-2"></i>
                     <span id="languageBtn">English</span>
                 </button>
-                <button class="btn language-toggle" onclick="logout()" style="left: 120px; padding: 5px 10px; font-size: 12px;" title="تسجيل الخروج">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span id="logoutBtn" style="display: none;">خروج</span>
+                <button class="btn logout-btn" onclick="logout()" title="تسجيل الخروج">
+                    <i class="fas fa-sign-out-alt me-2"></i>
+                    <span id="logoutBtn">تسجيل خروج</span>
                 </button>
                 <h1 class="mb-3">
                     <i class="fas fa-users me-3"></i>
@@ -306,7 +374,7 @@
                     <div class="d-flex gap-2">
                         <button class="btn btn-add" onclick="openAddModal()">
                             <i class="fas fa-plus me-2"></i>
-                            <span id="addEmployeeBtn">إضافة موظف</span>
+                            <span id="addEmployeeBtn">➕ إضافة موظف جديد</span>
                         </button>
                     </div>
                 </div>
@@ -353,7 +421,7 @@
                     <div class="col-md-6 mb-3 d-flex align-items-end">
                         <button class="btn btn-search me-2" onclick="searchEmployees()">
                             <i class="fas fa-search me-2"></i>
-                            <span id="searchBtn">بحث</span>
+                            <span id="searchBtn">🔍 بحث</span>
                         </button>
                         <button class="btn btn-outline-secondary me-2" onclick="clearFilters()">
                             <i class="fas fa-times me-2"></i>
@@ -571,7 +639,10 @@
 
         // دالة تسجيل الخروج
         function logout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+            const currentLang = document.getElementById('htmlElement').classList.contains('english') ? 'en' : 'ar';
+            const confirmMessage = currentLang === 'ar' ? 'هل أنت متأكد من تسجيل الخروج؟' : 'Are you sure you want to logout?';
+            
+            if (confirm(confirmMessage)) {
                 localStorage.removeItem('authToken');
                 localStorage.removeItem('user');
                 window.location.href = '/login';
@@ -600,7 +671,7 @@
             ar: {
                 pageTitle: 'مجموعة شركات العقيلي - Al-Aqeeli Group',
                 languageBtn: 'English',
-                logoutBtn: 'خروج',
+                logoutBtn: 'تسجيل خروج',
                 mainTitle: 'مجموعة شركات العقيلي',
                 subTitle: 'Al-Aqeeli Group',
                 totalEmployeesText: 'إجمالي الموظفين',
@@ -608,13 +679,13 @@
                 cardsMissingText: 'بطاقات غير متوفرة',
                 cardsExpiredText: 'بطاقات منتهية',
                 searchTitle: 'البحث والفلتر',
-                addEmployeeBtn: 'إضافة موظف',
+                addEmployeeBtn: '➕ إضافة موظف جديد',
                 searchLabel: 'البحث (الاسم، رقم الموظف، رقم الجواز)',
                 nationalityLabel: 'الجنسية',
                 companyLabel: 'الشركة',
                 passportStatusLabel: 'حالة الجواز',
                 cardStatusLabel: 'حالة البطاقة',
-                searchBtn: 'بحث',
+                searchBtn: '🔍 بحث',
                 clearBtn: 'مسح الفلاتر',
                 viewModeText: 'عرض مختصر',
                 summaryViewText: 'عرض تفصيلي',

@@ -135,8 +135,16 @@ def login_page():
 # الصفحة الرئيسية للنظام (بعد تسجيل الدخول)
 @app.route('/dashboard')
 def dashboard():
-    # التحقق سيتم في JavaScript في الصفحة نفسها
-    return render_template('index.html')
+    try:
+        # التحقق سيتم في JavaScript في الصفحة نفسها
+        return render_template('index.html')
+    except Exception as e:
+        return f"Template Error: {str(e)}", 500
+
+# Route بديل للتشخيص
+@app.route('/test-dashboard')
+def test_dashboard():
+    return "<h1>Dashboard route is working!</h1><p>Template loading test</p>"
 
 # API تسجيل الدخول
 @app.route('/api/login', methods=['POST'])

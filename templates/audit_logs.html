@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlElement">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">سجل التعديلات - مجموعة شركات العقيلي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 15px;
+            color: white;
+            position: relative;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            min-width: 100px;
+            text-decoration: none;
+        }
+        
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .language-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 8px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            min-width: 100px;
+        }
+        
+        .language-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .filters-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .audit-log-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .audit-log-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .action-badge {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .action-create {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .action-update {
+            background-color: #ffc107;
+            color: black;
+        }
+        
+        .action-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .changes-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .change-item {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            padding: 5px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        /* English styles */
+        .english {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            direction: ltr;
+        }
+        
+        .english .language-toggle {
+            right: auto;
+            left: 15px;
+        }
+        
+        .english .back-btn {
+            left: auto;
+            right: 15px;
+        }
+        
+        /* تحسينات للأجهزة المحمولة */
+        @media (max-width: 768px) {
+            .language-toggle, .back-btn {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                margin: 5px;
+                display: inline-block;
+                width: auto;
+                min-width: 80px;
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+            
+            .header-section {
+                text-align: center;
+                padding: 15px;
+            }
+            
+            .main-container {
+                margin: 5px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- العنوان الرئيسي -->
+            <div class="header-section">
+                <a href="/" class="btn back-btn">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    <span id="backBtn">العودة للرئيسية</span>
+                </a>
+                <button class="btn language-toggle" onclick="toggleLanguage()">
+                    <i class="fas fa-language me-2"></i>
+                    <span id="languageBtn">English</span>
+                </button>
+                <h1 class="mb-3">
+                    <i class="fas fa-history me-3"></i>
+                    <span id="mainTitle">سجل التعديلات</span>
+                </h1>
+                <p class="lead mb-0" id="subTitle">Employee Audit Log</p>
+            </div>
+
+            <!-- قسم الفلاتر -->
+            <div class="filters-section">
+                <div class="row align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label" id="employeeFilterLabel">فلتر بالموظف</label>
+                        <input type="text" class="form-control" id="employeeFilter" placeholder="رقم الموظف أو الاسم...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" id="actionFilterLabel">نوع العملية</label>
+                        <select class="form-select" id="actionFilter">
+                            <option value="">الكل</option>
+                            <option value="create">إضافة</option>
+                            <option value="update">تعديل</option>
+                            <option value="delete">حذف</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label" id="limitLabel">عدد السجلات</label>
+                        <select class="form-select" id="limitSelect">
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100" onclick="loadAuditLogs()">
+                            <i class="fas fa-search me-2"></i>
+                            <span id="searchBtn">تحديث</span>
+                        </button>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-success w-100" onclick="exportAuditLogs()">
+                            <i class="fas fa-download me-2"></i>
+                            <span id="exportBtn">تصدير</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- قسم النتائج -->
+            <div class="results-section">
+                <div id="loadingIndicator" class="loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2" id="loadingText">جاري تحميل السجلات...</p>
+                </div>
+
+                <div id="auditLogsList">
+                    <!-- سيتم ملء السجلات هنا بواسطة JavaScript -->
+                </div>
+
+                <div id="noResults" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 id="noResultsTitle">لا توجد سجلات</h5>
+                    <p id="noResultsText">لم يتم العثور على أي سجلات تعديل</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // التحقق من تسجيل الدخول
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = '/login';
+                return false;
+            }
+            
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                if (payload.exp * 1000 < Date.now()) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                localStorage.removeItem('authToken');
+                window.location.href = '/login';
+                return false;
+            }
+        }
+
+        // إضافة header للطلبات
+        function getAuthHeaders() {
+            const token = localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            };
+        }
+
+        // ترجمات
+        const translations = {
+            ar: {
+                pageTitle: 'سجل التعديلات - مجموعة شركات العقيلي',
+                mainTitle: 'سجل التعديلات',
+                subTitle: 'Employee Audit Log',
+                backBtn: 'العودة للرئيسية',
+                languageBtn: 'English',
+                employeeFilterLabel: 'فلتر بالموظف',
+                actionFilterLabel: 'نوع العملية',
+                limitLabel: 'عدد السجلات',
+                searchBtn: 'تحديث',
+                exportBtn: 'تصدير',
+                loadingText: 'جاري تحميل السجلات...',
+                noResultsTitle: 'لا توجد سجلات',
+                noResultsText: 'لم يتم العثور على أي سجلات تعديل',
+                actionCreate: 'إضافة',
+                actionUpdate: 'تعديل',
+                actionDelete: 'حذف',
+                by: 'بواسطة',
+                at: 'في',
+                changes: 'التغييرات',
+                from: 'من',
+                to: 'إلى'
+            },
+            en: {
+                pageTitle: 'Audit Log - Al-Aqeeli Group',
+                mainTitle: 'Audit Log',
+                subTitle: 'سجل التعديلات',
+                backBtn: 'Back to Home',
+                languageBtn: 'العربية',
+                employeeFilterLabel: 'Filter by Employee',
+                actionFilterLabel: 'Action Type',
+                limitLabel: 'Number of Records',
+                searchBtn: 'Refresh',
+                exportBtn: 'Export',
+                loadingText: 'Loading records...',
+                noResultsTitle: 'No Records Found',
+                noResultsText: 'No audit logs found',
+                actionCreate: 'Create',
+                actionUpdate: 'Update',
+                actionDelete: 'Delete',
+                by: 'by',
+                at: 'at',
+                changes: 'Changes',
+                from: 'from',
+                to: 'to'
+            }
+        };
+
+        let currentLanguage = 'ar';
+
+        // تغيير اللغة
+        function toggleLanguage() {
+            currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            updateLanguage();
+        }
+
+        function updateLanguage() {
+            const t = translations[currentLanguage];
+            const htmlElement = document.getElementById('htmlElement');
+            
+            if (currentLanguage === 'en') {
+                htmlElement.setAttribute('lang', 'en');
+                htmlElement.setAttribute('dir', 'ltr');
+                htmlElement.classList.add('english');
+            } else {
+                htmlElement.setAttribute('lang', 'ar');
+                htmlElement.setAttribute('dir', 'rtl');
+                htmlElement.classList.remove('english');
+            }
+
+            // تحديث النصوص
+            document.title = t.pageTitle;
+            document.getElementById('mainTitle').textContent = t.mainTitle;
+            document.getElementById('subTitle').textContent = t.subTitle;
+            document.getElementById('backBtn').textContent = t.backBtn;
+            document.getElementById('languageBtn').textContent = t.languageBtn;
+            document.getElementById('employeeFilterLabel').textContent = t.employeeFilterLabel;
+            document.getElementById('actionFilterLabel').textContent = t.actionFilterLabel;
+            document.getElementById('limitLabel').textContent = t.limitLabel;
+            document.getElementById('searchBtn').textContent = t.searchBtn;
+            document.getElementById('exportBtn').textContent = t.exportBtn;
+            document.getElementById('loadingText').textContent = t.loadingText;
+            document.getElementById('noResultsTitle').textContent = t.noResultsTitle;
+            document.getElementById('noResultsText').textContent = t.noResultsText;
+
+            // تحديث قائمة نوع العملية
+            const actionFilter = document.getElementById('actionFilter');
+            actionFilter.innerHTML = `
+                <option value="">${currentLanguage === 'ar' ? 'الكل' : 'All'}</option>
+                <option value="create">${t.actionCreate}</option>
+                <option value="update">${t.actionUpdate}</option>
+                <option value="delete">${t.actionDelete}</option>
+            `;
+        }
+
+        // تحميل سجل التعديلات
+        async function loadAuditLogs() {
+            if (!checkAuth()) return;
+
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const auditLogsList = document.getElementById('auditLogsList');
+            const noResults = document.getElementById('noResults');
+
+            loadingIndicator.style.display = 'block';
+            auditLogsList.innerHTML = '';
+            noResults.style.display = 'none';
+
+            try {
+                const employeeFilter = document.getElementById('employeeFilter').value;
+                const actionFilter = document.getElementById('actionFilter').value;
+                const limit = document.getElementById('limitSelect').value;
+
+                let url = `/api/audit-logs?limit=${limit}`;
+                if (employeeFilter) {
+                    url += `&employee_id=${encodeURIComponent(employeeFilter)}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch audit logs');
+                }
+
+                const logs = await response.json();
+                
+                // فلترة حسب نوع العملية
+                const filteredLogs = actionFilter ? 
+                    logs.filter(log => log.action_type === actionFilter) : logs;
+
+                displayAuditLogs(filteredLogs);
+
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                auditLogsList.innerHTML = `
+                    <div class="alert alert-danger text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${currentLanguage === 'ar' ? 'خطأ في تحميل السجلات' : 'Error loading audit logs'}
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // عرض سجل التعديلات
+        function displayAuditLogs(logs) {
+            const auditLogsList = document.getElementById('auditLogsList');
+            const noResults = document.getElementById('noResults');
+            const t = translations[currentLanguage];
+
+            if (logs.length === 0) {
+                noResults.style.display = 'block';
+                return;
+            }
+
+            auditLogsList.innerHTML = logs.map(log => {
+                const actionClass = `action-${log.action_type}`;
+                const actionText = t[`action${log.action_type.charAt(0).toUpperCase() + log.action_type.slice(1)}`];
+                const timestamp = new Date(log.timestamp).toLocaleString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+
+                let changesHtml = '';
+                if (log.changes && log.changes.length > 0) {
+                    changesHtml = `
+                        <div class="changes-list">
+                            <strong>${t.changes}:</strong>
+                            ${log.changes.map(change => `
+                                <div class="change-item">
+                                    <strong>${change.field}:</strong> 
+                                    <span class="text-muted">${t.from}</span> "${change.old_value || 'N/A'}" 
+                                    <span class="text-muted">${t.to}</span> "${change.new_value || 'N/A'}"
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card audit-log-card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <span class="action-badge ${actionClass}">${actionText}</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>${log.employee_name || 'N/A'}</strong><br>
+                                    <small class="text-muted">#${log.employee_id || 'N/A'}</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted">${t.by}:</small><br>
+                                    <strong>${log.user_id}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">${t.at}:</small><br>
+                                    <strong>${timestamp}</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    ${log.changes && log.changes.length > 0 ? 
+                                        `<button class="btn btn-sm btn-outline-primary" onclick="toggleChanges('${log._id}')">
+                                            <i class="fas fa-eye"></i> ${currentLanguage === 'ar' ? 'التفاصيل' : 'Details'}
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </div>
+                            <div id="changes-${log._id}" style="display: none;">
+                                ${changesHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // إظهار/إخفاء التغييرات
+        function toggleChanges(logId) {
+            const changesDiv = document.getElementById(`changes-${logId}`);
+            if (changesDiv.style.display === 'none') {
+                changesDiv.style.display = 'block';
+            } else {
+                changesDiv.style.display = 'none';
+            }
+        }
+
+        // تصدير السجلات
+        async function exportAuditLogs() {
+            if (!checkAuth()) return;
+
+            try {
+                const response = await fetch('/api/audit-logs?limit=1000', {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch audit logs');
+                }
+
+                const logs = await response.json();
+                
+                // تحويل إلى CSV
+                const csvContent = convertToCSV(logs);
+                downloadCSV(csvContent, 'audit_logs.csv');
+
+            } catch (error) {
+                console.error('Error exporting audit logs:', error);
+                alert(currentLanguage === 'ar' ? 'خطأ في تصدير السجلات' : 'Error exporting audit logs');
+            }
+        }
+
+        // تحويل إلى CSV
+        function convertToCSV(logs) {
+            const headers = currentLanguage === 'ar' ? 
+                ['نوع العملية', 'رقم الموظف', 'اسم الموظف', 'المستخدم', 'التاريخ', 'التغييرات'] :
+                ['Action Type', 'Employee ID', 'Employee Name', 'User', 'Date', 'Changes'];
+
+            const csvRows = [headers.join(',')];
+
+            logs.forEach(log => {
+                const changes = log.changes ? 
+                    log.changes.map(c => `${c.field}: ${c.old_value} -> ${c.new_value}`).join('; ') : '';
+                
+                const row = [
+                    log.action_type,
+                    log.employee_id || '',
+                    log.employee_name || '',
+                    log.user_id,
+                    new Date(log.timestamp).toLocaleString(),
+                    `"${changes}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            return csvRows.join('\n');
+        }
+
+        // تحميل ملف CSV
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // البحث عند الضغط على Enter
+        document.getElementById('employeeFilter').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadAuditLogs();
+            }
+        });
+
+        // تحميل السجلات عند تغيير الفلاتر
+        document.getElementById('actionFilter').addEventListener('change', loadAuditLogs);
+        document.getElementById('limitSelect').addEventListener('change', loadAuditLogs);
+
+        // التحقق من تسجيل الدخول عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuth()) return;
+            updateLanguage();
+            loadAuditLogs();
+        });
+    </script>
+</body>
+</html>

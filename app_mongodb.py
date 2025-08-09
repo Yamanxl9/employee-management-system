@@ -99,6 +99,63 @@ def require_auth(f):
     def decorated_function(*args, **kwargs):
         token = request.headers.get('Authorization')
         if token and token.startswith('Bearer '):
+            token = token[7:]  # إزالة "Bearer " من البداية
+            user_id = verify_token(token)
+            if user_id:
+                request.current_user = user_id
+                return f(*args, **kwargs)
+        
+        return jsonify({'error': 'Authentication required'}), 401
+    return decorated_function
+
+# دوال تسجيل التعديلات (Audit Log)
+def log_employee_action(action_type, employee_data, user_id, old_data=None):
+    """تسجيل عملية على الموظف في سجل التعديلات"""
+    try:
+        audit_log = {
+            'action_type': action_type,  # 'create', 'update', 'delete'
+            'employee_id': employee_data.get('staff_no'),
+            'employee_name': employee_data.get('staff_name'),
+            'user_id': user_id,
+            'timestamp': datetime.utcnow(),
+            'new_data': employee_data.copy() if employee_data else None,
+            'old_data': old_data.copy() if old_data else None,
+            'changes': []
+        }
+        
+        # تحديد التغييرات المحددة
+        if action_type == 'update' and old_data:
+            changes = []
+            for key, new_value in employee_data.items():
+                old_value = old_data.get(key)
+                if str(old_value) != str(new_value):
+                    changes.append({
+                        'field': key,
+                        'old_value': str(old_value) if old_value is not None else None,
+                        'new_value': str(new_value) if new_value is not None else None
+                    })
+            audit_log['changes'] = changes
+        
+        # حفظ في قاعدة البيانات
+        mongo.db.audit_logs.insert_one(audit_log)
+        print(f"تم تسجيل العملية: {action_type} للموظف {employee_data.get('staff_name')}")
+        
+    except Exception as e:
+        print(f"خطأ في تسجيل العملية: {str(e)}")
+
+def get_audit_logs(limit=100, employee_id=None):
+    """جلب سجل التعديلات"""
+    try:
+        query = {}
+        if employee_id:
+            query['employee_id'] = employee_id
+            
+        logs = list(mongo.db.audit_logs.find(query).sort('timestamp', -1).limit(limit))
+        return [serialize_doc(log) for log in logs]
+    except Exception as e:
+        print(f"خطأ في جلب سجل التعديلات: {str(e)}")
+        return []
+        if token and token.startswith('Bearer '):
             token = token[7:]  # إزالة "Bearer "
             user_id = verify_token(token)
             if user_id:
@@ -320,6 +377,7 @@ def search_employees():
 
 # API لإضافة موظف جديد
 @app.route('/api/employees', methods=['POST'])
+@require_auth
 def add_employee():
     try:
         data = request.get_json()
@@ -348,6 +406,9 @@ def add_employee():
         # إدراج الموظف في MongoDB
         result = mongo.db.employees.insert_one(data)
         
+        # تسجيل العملية في سجل التعديلات
+        log_employee_action('create', data, getattr(request, 'current_user', 'admin'))
+        
         # جلب الموظف المضاف مع التفاصيل الكاملة
         employee = mongo.db.employees.find_one({'_id': result.inserted_id})
         emp_dict = serialize_doc(employee)
@@ -360,9 +421,17 @@ def add_employee():
 
 # API لتحديث بيانات موظف
 @app.route('/api/employees/<staff_no>', methods=['PUT'])
+@require_auth
 def update_employee(staff_no):
     try:
         data = request.get_json()
+        
+        # جلب البيانات القديمة للمقارنة
+        old_employee = mongo.db.employees.find_one({'staff_no': staff_no})
+        if not old_employee:
+            return jsonify({'error': 'الموظف غير موجود'}), 404
+            
+        old_data = serialize_doc(old_employee)
         
         # تحويل تاريخ انتهاء البطاقة إذا كان موجوداً
         if 'card_expiry_date' in data and data['card_expiry_date']:
@@ -381,6 +450,12 @@ def update_employee(staff_no):
         
         if result.matched_count == 0:
             return jsonify({'error': 'الموظف غير موجود'}), 404
+        
+        # تسجيل العملية في سجل التعديلات
+        new_data = data.copy()
+        new_data['staff_no'] = staff_no  # إضافة رقم الموظف للبيانات الجديدة
+        new_data['staff_name'] = old_data.get('staff_name')  # الاحتفاظ بالاسم
+        log_employee_action('update', new_data, getattr(request, 'current_user', 'admin'), old_data)
         
         # جلب الموظف المحدث
         employee = mongo.db.employees.find_one({'staff_no': staff_no})
@@ -503,6 +578,25 @@ def get_filters():
 def test_connection():
     """اختبار الاتصال"""
     return jsonify({'status': 'OK', 'message': 'Server is running with MongoDB'})
+
+# API لسجل التعديلات
+@app.route('/api/audit-logs')
+@require_auth
+def get_audit_logs_api():
+    """جلب سجل التعديلات"""
+    try:
+        limit = int(request.args.get('limit', 50))
+        employee_id = request.args.get('employee_id')
+        
+        logs = get_audit_logs(limit, employee_id)
+        return jsonify(logs)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/audit-logs')
+def audit_logs_page():
+    """صفحة سجل التعديلات"""
+    return render_template('audit_logs.html')
 
 def load_initial_data():
     """تحميل البيانات الأولية في MongoDB"""

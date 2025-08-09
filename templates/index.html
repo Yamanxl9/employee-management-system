@@ -334,32 +334,46 @@
 
             <!-- قسم الإحصائيات -->
             <div class="row mb-4" id="statisticsSection">
-                <div class="col-md-3">
+                <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="stats-card clickable-card" onclick="showAllEmployees()">
                         <i class="fas fa-users fa-2x mb-2"></i>
                         <h4 id="totalEmployees">0</h4>
                         <small id="totalEmployeesText">إجمالي الموظفين</small>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #dc3545, #fd7e14);" onclick="filterByPassportStatus('missing')">
                         <i class="fas fa-passport fa-2x mb-2"></i>
                         <h4 id="passportMissing">0</h4>
                         <small id="passportMissingText">جوازات غير متوفرة</small>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #ffc107, #fd7e14);" onclick="filterByCardStatus('missing')">
                         <i class="fas fa-id-card fa-2x mb-2"></i>
                         <h4 id="cardsMissing">0</h4>
                         <small id="cardsMissingText">بطاقات غير متوفرة</small>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-lg-2 col-md-4 col-sm-6">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #6f42c1, #e83e8c);" onclick="filterByCardStatus('expired')">
                         <i class="fas fa-clock fa-2x mb-2"></i>
                         <h4 id="cardsExpired">0</h4>
                         <small id="cardsExpiredText">بطاقات منتهية</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #17a2b8, #20c997);" onclick="openAuditLogs()">
+                        <i class="fas fa-history fa-2x mb-2"></i>
+                        <h4 id="auditLogsCount">📋</h4>
+                        <small id="auditLogsText">سجل التعديلات</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #28a745, #20c997);" onclick="openAddModal()">
+                        <i class="fas fa-plus fa-2x mb-2"></i>
+                        <h4 id="addEmployeeIcon">➕</h4>
+                        <small id="addEmployeeText">إضافة موظف</small>
                     </div>
                 </div>
             </div>
@@ -678,6 +692,8 @@
                 passportMissingText: 'جوازات غير متوفرة',
                 cardsMissingText: 'بطاقات غير متوفرة',
                 cardsExpiredText: 'بطاقات منتهية',
+                auditLogsText: 'سجل التعديلات',
+                addEmployeeText: 'إضافة موظف',
                 searchTitle: 'البحث والفلتر',
                 addEmployeeBtn: '➕ إضافة موظف جديد',
                 searchLabel: 'البحث (الاسم، رقم الموظف، رقم الجواز)',
@@ -742,6 +758,8 @@
                 passportMissingText: 'Missing Passports',
                 cardsMissingText: 'Missing Cards',
                 cardsExpiredText: 'Expired Cards',
+                auditLogsText: 'Audit Log',
+                addEmployeeText: 'Add Employee',
                 searchTitle: 'Search & Filter',
                 addEmployeeBtn: 'Add Employee',
                 searchLabel: 'Search (Name, Employee No., Passport No.)',
@@ -873,6 +891,8 @@
             document.getElementById('passportMissingText').textContent = t.passportMissingText;
             document.getElementById('cardsMissingText').textContent = t.cardsMissingText;
             document.getElementById('cardsExpiredText').textContent = t.cardsExpiredText;
+            document.getElementById('auditLogsText').textContent = t.auditLogsText;
+            document.getElementById('addEmployeeText').textContent = t.addEmployeeText;
             document.getElementById('searchTitle').textContent = t.searchTitle;
             document.getElementById('addEmployeeBtn').textContent = t.addEmployeeBtn;
             document.getElementById('searchLabel').textContent = t.searchLabel;
@@ -1351,6 +1371,11 @@
             
             paginationHTML += '</ul></nav>';
             paginationContainer.innerHTML = paginationHTML;
+        }
+
+        // فتح صفحة سجل التعديلات
+        function openAuditLogs() {
+            window.open('/audit-logs', '_blank');
         }
 
         // فتح نافذة إضافة موظف

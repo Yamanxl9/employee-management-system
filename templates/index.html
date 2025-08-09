@@ -182,6 +182,83 @@
             box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
         }
         
+        /* سجل التعديلات */
+        .audit-logs-section {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 3px solid #e9ecef;
+        }
+        
+        .audit-log-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .audit-log-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .action-badge {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .action-create {
+            background-color: #28a745;
+            color: white;
+        }
+        
+        .action-update {
+            background-color: #ffc107;
+            color: black;
+        }
+        
+        .action-delete {
+            background-color: #dc3545;
+            color: white;
+        }
+        
+        .changes-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .change-item {
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .field-name {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .old-value {
+            color: #dc3545;
+            text-decoration: line-through;
+        }
+        
+        .new-value {
+            color: #28a745;
+            font-weight: 500;
+        }
+        
         /* العرض المختصر */
         .summary-view {
             background: white;
@@ -363,7 +440,7 @@
                     </div>
                 </div>
                 <div class="col-lg-2 col-md-4 col-sm-6">
-                    <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #17a2b8, #20c997);" onclick="openAuditLogs()">
+                    <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #17a2b8, #20c997);" onclick="showAuditLogsSection()">
                         <i class="fas fa-history fa-2x mb-2"></i>
                         <h4 id="auditLogsCount">📋</h4>
                         <small id="auditLogsText">سجل التعديلات</small>
@@ -468,6 +545,83 @@
                 
                 <div class="pagination-container" id="paginationContainer" style="display: none;">
                     <!-- سيتم إضافة الـ pagination هنا -->
+                </div>
+            </div>
+
+            <!-- قسم سجل التعديلات -->
+            <div class="audit-logs-section" id="auditLogsSection" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4>
+                        <i class="fas fa-history me-2"></i>
+                        <span id="auditLogsTitle">سجل التعديلات</span>
+                    </h4>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-secondary" onclick="hideAuditLogsSection()">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            <span id="backToEmployeesBtn">العودة للموظفين</span>
+                        </button>
+                        <button class="btn btn-success" onclick="exportAuditLogs()">
+                            <i class="fas fa-download me-2"></i>
+                            <span id="exportAuditBtn">تصدير السجل</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- فلاتر سجل التعديلات -->
+                <div class="search-section mb-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label" id="auditEmployeeFilterLabel">فلتر بالموظف</label>
+                            <input type="text" class="form-control" id="auditEmployeeFilter" placeholder="رقم الموظف أو الاسم...">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" id="auditActionFilterLabel">نوع العملية</label>
+                            <select class="form-select" id="auditActionFilter">
+                                <option value="">الكل</option>
+                                <option value="create">إضافة</option>
+                                <option value="update">تعديل</option>
+                                <option value="delete">حذف</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label" id="auditLimitLabel">عدد السجلات</label>
+                            <select class="form-select" id="auditLimitSelect">
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-primary w-100" onclick="loadAuditLogs()">
+                                <i class="fas fa-search me-2"></i>
+                                <span id="auditSearchBtn">تحديث</span>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-warning w-100" onclick="clearAuditFilters()">
+                                <i class="fas fa-eraser me-2"></i>
+                                <span id="auditClearBtn">مسح</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نتائج سجل التعديلات -->
+                <div id="auditLoadingIndicator" class="loading" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2" id="auditLoadingText">جاري تحميل السجلات...</p>
+                </div>
+
+                <div id="auditLogsList">
+                    <!-- سيتم ملء السجلات هنا بواسطة JavaScript -->
+                </div>
+
+                <div id="auditNoResults" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h5 id="auditNoResultsTitle">لا توجد سجلات</h5>
+                    <p id="auditNoResultsText">لم يتم العثور على أي سجلات تعديل</p>
                 </div>
             </div>
         </div>
@@ -746,7 +900,28 @@
                 deleteModalTitle: 'تأكيد الحذف',
                 deleteModalBody: 'هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.',
                 cancelDeleteBtn: 'إلغاء',
-                confirmDeleteBtn: 'حذف'
+                confirmDeleteBtn: 'حذف',
+                auditLogsTitle: 'سجل التعديلات',
+                backToEmployeesBtn: 'العودة للموظفين',
+                exportAuditBtn: 'تصدير السجل',
+                auditEmployeeFilterLabel: 'فلتر بالموظف',
+                auditActionFilterLabel: 'نوع العملية',
+                auditLimitLabel: 'عدد السجلات',
+                auditSearchBtn: 'تحديث',
+                auditClearBtn: 'مسح',
+                auditLoadingText: 'جاري تحميل السجلات...',
+                auditNoResultsTitle: 'لا توجد سجلات',
+                auditNoResultsText: 'لم يتم العثور على أي سجلات تعديل',
+                actionCreate: 'إضافة',
+                actionUpdate: 'تعديل',
+                actionDelete: 'حذف',
+                by: 'بواسطة',
+                at: 'في',
+                changes: 'التغييرات',
+                from: 'من',
+                to: 'إلى',
+                showDetails: 'عرض التفاصيل',
+                hideDetails: 'إخفاء التفاصيل'
             },
             en: {
                 pageTitle: 'Al-Aqeeli Group - مجموعة شركات العقيلي',
@@ -812,7 +987,28 @@
                 deleteModalTitle: 'Confirm Deletion',
                 deleteModalBody: 'Are you sure you want to delete this employee? This action cannot be undone.',
                 cancelDeleteBtn: 'Cancel',
-                confirmDeleteBtn: 'Delete'
+                confirmDeleteBtn: 'Delete',
+                auditLogsTitle: 'Audit Log',
+                backToEmployeesBtn: 'Back to Employees',
+                exportAuditBtn: 'Export Log',
+                auditEmployeeFilterLabel: 'Filter by Employee',
+                auditActionFilterLabel: 'Action Type',
+                auditLimitLabel: 'Record Count',
+                auditSearchBtn: 'Refresh',
+                auditClearBtn: 'Clear',
+                auditLoadingText: 'Loading records...',
+                auditNoResultsTitle: 'No Records Found',
+                auditNoResultsText: 'No audit logs found',
+                actionCreate: 'Create',
+                actionUpdate: 'Update',
+                actionDelete: 'Delete',
+                by: 'by',
+                at: 'at',
+                changes: 'Changes',
+                from: 'from',
+                to: 'to',
+                showDetails: 'Show Details',
+                hideDetails: 'Hide Details'
             }
         };
 
@@ -937,6 +1133,39 @@
             document.getElementById('deleteModalBody').textContent = t.deleteModalBody;
             document.getElementById('cancelDeleteBtn').textContent = t.cancelDeleteBtn;
             document.getElementById('confirmDeleteBtn').textContent = t.confirmDeleteBtn;
+            
+            // تحديث عناصر سجل التعديلات
+            const auditElements = {
+                'auditLogsTitle': t.auditLogsTitle,
+                'backToEmployeesBtn': t.backToEmployeesBtn,
+                'exportAuditBtn': t.exportAuditBtn,
+                'auditEmployeeFilterLabel': t.auditEmployeeFilterLabel,
+                'auditActionFilterLabel': t.auditActionFilterLabel,
+                'auditLimitLabel': t.auditLimitLabel,
+                'auditSearchBtn': t.auditSearchBtn,
+                'auditClearBtn': t.auditClearBtn,
+                'auditLoadingText': t.auditLoadingText,
+                'auditNoResultsTitle': t.auditNoResultsTitle,
+                'auditNoResultsText': t.auditNoResultsText
+            };
+            
+            Object.keys(auditElements).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = auditElements[id];
+                }
+            });
+            
+            // تحديث قائمة نوع العملية في سجل التعديلات
+            const auditActionFilter = document.getElementById('auditActionFilter');
+            if (auditActionFilter) {
+                auditActionFilter.innerHTML = `
+                    <option value="">${currentLanguage === 'ar' ? 'الكل' : 'All'}</option>
+                    <option value="create">${t.actionCreate}</option>
+                    <option value="update">${t.actionUpdate}</option>
+                    <option value="delete">${t.actionDelete}</option>
+                `;
+            }
         }
 
         // تحميل الإحصائيات
@@ -1378,6 +1607,21 @@
             window.open('/audit-logs', '_blank');
         }
 
+        // إظهار قسم سجل التعديلات
+        function showAuditLogsSection() {
+            document.querySelector('.results-section').style.display = 'none';
+            document.querySelector('.search-section').style.display = 'none';
+            document.getElementById('auditLogsSection').style.display = 'block';
+            loadAuditLogs();
+        }
+
+        // إخفاء قسم سجل التعديلات
+        function hideAuditLogsSection() {
+            document.querySelector('.results-section').style.display = 'block';
+            document.querySelector('.search-section').style.display = 'block';
+            document.getElementById('auditLogsSection').style.display = 'none';
+        }
+
         // فتح نافذة إضافة موظف
         function openAddModal() {
             isEditMode = false;
@@ -1621,6 +1865,223 @@
             currentPage = 1;
             loadEmployees();
         }
+
+        // === دوال سجل التعديلات ===
+
+        // تحميل سجل التعديلات
+        async function loadAuditLogs() {
+            if (!checkAuth()) return;
+
+            const loadingIndicator = document.getElementById('auditLoadingIndicator');
+            const auditLogsList = document.getElementById('auditLogsList');
+            const noResults = document.getElementById('auditNoResults');
+
+            loadingIndicator.style.display = 'block';
+            auditLogsList.innerHTML = '';
+            noResults.style.display = 'none';
+
+            try {
+                const employeeFilter = document.getElementById('auditEmployeeFilter').value;
+                const actionFilter = document.getElementById('auditActionFilter').value;
+                const limit = document.getElementById('auditLimitSelect').value;
+
+                let url = `/api/audit-logs?limit=${limit}`;
+                if (employeeFilter) {
+                    url += `&employee_id=${encodeURIComponent(employeeFilter)}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch audit logs');
+                }
+
+                const logs = await response.json();
+                
+                // فلترة حسب نوع العملية
+                const filteredLogs = actionFilter ? 
+                    logs.filter(log => log.action_type === actionFilter) : logs;
+
+                displayAuditLogs(filteredLogs);
+
+            } catch (error) {
+                console.error('Error loading audit logs:', error);
+                auditLogsList.innerHTML = `
+                    <div class="alert alert-danger text-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${currentLanguage === 'ar' ? 'خطأ في تحميل السجلات' : 'Error loading audit logs'}
+                    </div>
+                `;
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // عرض سجل التعديلات
+        function displayAuditLogs(logs) {
+            const auditLogsList = document.getElementById('auditLogsList');
+            const noResults = document.getElementById('auditNoResults');
+            const t = translations[currentLanguage];
+
+            if (logs.length === 0) {
+                noResults.style.display = 'block';
+                return;
+            }
+
+            auditLogsList.innerHTML = logs.map(log => {
+                const actionClass = `action-${log.action_type}`;
+                const actionText = t[`action${log.action_type.charAt(0).toUpperCase() + log.action_type.slice(1)}`];
+                const timestamp = new Date(log.timestamp).toLocaleString(currentLanguage === 'ar' ? 'ar-EG' : 'en-US');
+
+                let changesHtml = '';
+                if (log.changes && log.changes.length > 0) {
+                    changesHtml = `
+                        <div class="changes-list" id="changes-${log._id}" style="display: none;">
+                            <strong>${t.changes}:</strong>
+                            ${log.changes.map(change => `
+                                <div class="change-item">
+                                    <span class="field-name">${change.field}:</span> 
+                                    <span class="old-value">"${change.old_value || 'N/A'}"</span> 
+                                    <i class="fas fa-arrow-left mx-2"></i>
+                                    <span class="new-value">"${change.new_value || 'N/A'}"</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="card audit-log-card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-2">
+                                    <span class="action-badge ${actionClass}">${actionText}</span>
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>${log.employee_name || 'N/A'}</strong><br>
+                                    <small class="text-muted">#${log.employee_id || 'N/A'}</small>
+                                </div>
+                                <div class="col-md-2">
+                                    <small class="text-muted">${t.by}:</small><br>
+                                    <strong>${log.user_id}</strong>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">${t.at}:</small><br>
+                                    <strong>${timestamp}</strong>
+                                </div>
+                                <div class="col-md-2">
+                                    ${log.changes && log.changes.length > 0 ? 
+                                        `<button class="btn btn-sm btn-outline-primary" onclick="toggleAuditChanges('${log._id}')">
+                                            <i class="fas fa-eye"></i> <span id="details-btn-${log._id}">${t.showDetails}</span>
+                                        </button>` : ''
+                                    }
+                                </div>
+                            </div>
+                            ${changesHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // إظهار/إخفاء التغييرات
+        function toggleAuditChanges(logId) {
+            const changesDiv = document.getElementById(`changes-${logId}`);
+            const detailsBtn = document.getElementById(`details-btn-${logId}`);
+            const t = translations[currentLanguage];
+            
+            if (changesDiv.style.display === 'none') {
+                changesDiv.style.display = 'block';
+                detailsBtn.textContent = t.hideDetails;
+            } else {
+                changesDiv.style.display = 'none';
+                detailsBtn.textContent = t.showDetails;
+            }
+        }
+
+        // تصدير سجل التعديلات
+        async function exportAuditLogs() {
+            if (!checkAuth()) return;
+
+            try {
+                const response = await fetch('/api/audit-logs?limit=1000', {
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch audit logs');
+                }
+
+                const logs = await response.json();
+                
+                // تحويل إلى CSV
+                const csvContent = convertAuditLogsToCSV(logs);
+                downloadCSV(csvContent, 'audit_logs.csv');
+
+            } catch (error) {
+                console.error('Error exporting audit logs:', error);
+                alert(currentLanguage === 'ar' ? 'خطأ في تصدير السجلات' : 'Error exporting audit logs');
+            }
+        }
+
+        // تحويل سجل التعديلات إلى CSV
+        function convertAuditLogsToCSV(logs) {
+            const headers = currentLanguage === 'ar' ? 
+                ['نوع العملية', 'رقم الموظف', 'اسم الموظف', 'المستخدم', 'التاريخ', 'التغييرات'] :
+                ['Action Type', 'Employee ID', 'Employee Name', 'User', 'Date', 'Changes'];
+
+            const csvRows = [headers.join(',')];
+
+            logs.forEach(log => {
+                const changes = log.changes ? 
+                    log.changes.map(c => `${c.field}: ${c.old_value} -> ${c.new_value}`).join('; ') : '';
+                
+                const row = [
+                    log.action_type,
+                    log.employee_id || '',
+                    log.employee_name || '',
+                    log.user_id,
+                    new Date(log.timestamp).toLocaleString(),
+                    `"${changes}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            return csvRows.join('\n');
+        }
+
+        // تحميل ملف CSV
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // مسح فلاتر سجل التعديلات
+        function clearAuditFilters() {
+            document.getElementById('auditEmployeeFilter').value = '';
+            document.getElementById('auditActionFilter').value = '';
+            document.getElementById('auditLimitSelect').value = '20';
+            loadAuditLogs();
+        }
+
+        // إعداد أحداث سجل التعديلات
+        document.getElementById('auditEmployeeFilter').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                loadAuditLogs();
+            }
+        });
+
+        document.getElementById('auditActionFilter').addEventListener('change', loadAuditLogs);
+        document.getElementById('auditLimitSelect').addEventListener('change', loadAuditLogs);
     </script>
 </body>
 </html>

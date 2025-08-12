@@ -734,7 +734,107 @@ def export_filtered_results():
         try:
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 # كتابة البيانات
-                df.to_excel(writer, sheet_name='بيانات الموظفين', index=False)
+                df.to_excel(writer, sheet_name='بيانات الموظفين', index=False, startrow=3)
+                
+                # تنسيق ورقة بيانات الموظفين
+                worksheet = writer.sheets['بيانات الموظفين']
+                
+                # استيراد التنسيقات من openpyxl
+                from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
+                from openpyxl.utils import get_column_letter
+                
+                # إضافة عنوان رئيسي للتقرير
+                worksheet.merge_cells('A1:L2')
+                title_cell = worksheet['A1']
+                title_cell.value = f"تقرير بيانات الموظفين - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+                title_cell.font = Font(name='Calibri', size=16, bold=True, color='FFFFFF')
+                title_cell.fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+                title_cell.alignment = Alignment(horizontal='center', vertical='center')
+                title_cell.border = Border(
+                    left=Side(style='thick', color='000000'),
+                    right=Side(style='thick', color='000000'),
+                    top=Side(style='thick', color='000000'),
+                    bottom=Side(style='thick', color='000000')
+                )
+                
+                # تنسيق العنوان (الصف الرابع)
+                header_font = Font(name='Calibri', size=12, bold=True, color='FFFFFF')
+                header_fill = PatternFill(start_color='2E8B57', end_color='2E8B57', fill_type='solid')
+                header_border = Border(
+                    left=Side(style='thin', color='000000'),
+                    right=Side(style='thin', color='000000'),
+                    top=Side(style='thin', color='000000'),
+                    bottom=Side(style='thin', color='000000')
+                )
+                header_alignment = Alignment(horizontal='center', vertical='center')
+                
+                # تطبيق تنسيق العنوان
+                for col in range(1, len(df.columns) + 1):
+                    cell = worksheet.cell(row=4, column=col)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                    cell.border = header_border
+                    cell.alignment = header_alignment
+                
+                # تنسيق بيانات الجدول
+                data_font = Font(name='Calibri', size=11)
+                data_border = Border(
+                    left=Side(style='thin', color='CCCCCC'),
+                    right=Side(style='thin', color='CCCCCC'),
+                    top=Side(style='thin', color='CCCCCC'),
+                    bottom=Side(style='thin', color='CCCCCC')
+                )
+                data_alignment = Alignment(horizontal='center', vertical='center')
+                
+                # تطبيق تنسيق البيانات مع تلوين متناوب للصفوف
+                for row in range(5, len(df) + 5):
+                    # تلوين متناوب للصفوف
+                    if row % 2 == 0:
+                        row_fill = PatternFill(start_color='F8F9FA', end_color='F8F9FA', fill_type='solid')
+                    else:
+                        row_fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+                    
+                    for col in range(1, len(df.columns) + 1):
+                        cell = worksheet.cell(row=row, column=col)
+                        cell.font = data_font
+                        cell.border = data_border
+                        cell.alignment = data_alignment
+                        
+                        # تلوين خاص لحالات الجواز والبطاقة
+                        col_name = df.columns[col-1]
+                        cell_value = str(cell.value) if cell.value else ''
+                        
+                        if col_name == 'حالة الجواز':
+                            if 'غير متوفر' in cell_value or 'مفقود' in cell_value:
+                                cell.fill = PatternFill(start_color='FFE6E6', end_color='FFE6E6', fill_type='solid')  # أحمر فاتح
+                                cell.font = Font(name='Calibri', size=11, color='CC0000', bold=True)
+                            elif 'متوفر' in cell_value or 'موجود' in cell_value:
+                                cell.fill = PatternFill(start_color='E6F7E6', end_color='E6F7E6', fill_type='solid')  # أخضر فاتح
+                                cell.font = Font(name='Calibri', size=11, color='008000', bold=True)
+                            else:
+                                cell.fill = row_fill
+                        elif col_name == 'حالة البطاقة':
+                            if 'منتهية' in cell_value or 'مفقودة' in cell_value:
+                                cell.fill = PatternFill(start_color='FFE6E6', end_color='FFE6E6', fill_type='solid')  # أحمر فاتح
+                                cell.font = Font(name='Calibri', size=11, color='CC0000', bold=True)
+                            elif 'تنتهي قريباً' in cell_value:
+                                cell.fill = PatternFill(start_color='FFF2E6', end_color='FFF2E6', fill_type='solid')  # برتقالي فاتح
+                                cell.font = Font(name='Calibri', size=11, color='FF8000', bold=True)
+                            elif 'سارية' in cell_value:
+                                cell.fill = PatternFill(start_color='E6F7E6', end_color='E6F7E6', fill_type='solid')  # أخضر فاتح
+                                cell.font = Font(name='Calibri', size=11, color='008000', bold=True)
+                            else:
+                                cell.fill = row_fill
+                        else:
+                            cell.fill = row_fill
+                
+                # تعديل عرض الأعمدة تلقائياً
+                for col in range(1, len(df.columns) + 1):
+                    column_letter = get_column_letter(col)
+                    max_length = max(len(str(df.iloc[row, col-1])) for row in range(len(df)))
+                    header_length = len(df.columns[col-1])
+                    adjusted_width = max(max_length, header_length) + 2
+                    worksheet.column_dimensions[column_letter].width = min(adjusted_width, 30)
                 
                 # إضافة معلومات الفلتر
                 filter_info = []
@@ -758,6 +858,37 @@ def export_filtered_results():
                 
                 summary_df = pd.DataFrame(summary_data, columns=['البيان', 'القيمة'])
                 summary_df.to_excel(writer, sheet_name='معلومات التقرير', index=False)
+                
+                # تنسيق ورقة معلومات التقرير
+                summary_worksheet = writer.sheets['معلومات التقرير']
+                
+                # تنسيق عنوان ورقة معلومات التقرير
+                summary_header_font = Font(name='Calibri', size=14, bold=True, color='FFFFFF')
+                summary_header_fill = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
+                
+                for col in range(1, 3):
+                    cell = summary_worksheet.cell(row=1, column=col)
+                    cell.font = summary_header_font
+                    cell.fill = summary_header_fill
+                    cell.border = header_border
+                    cell.alignment = header_alignment
+                
+                # تنسيق بيانات ورقة معلومات التقرير
+                summary_data_font = Font(name='Calibri', size=12)
+                for row in range(2, len(summary_data) + 2):
+                    for col in range(1, 3):
+                        cell = summary_worksheet.cell(row=row, column=col)
+                        cell.font = summary_data_font
+                        cell.border = data_border
+                        cell.alignment = data_alignment
+                        if col == 1:  # عمود البيان
+                            cell.fill = PatternFill(start_color='E7F3FF', end_color='E7F3FF', fill_type='solid')
+                        else:  # عمود القيمة
+                            cell.fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+                
+                # تعديل عرض أعمدة ورقة معلومات التقرير
+                summary_worksheet.column_dimensions['A'].width = 20
+                summary_worksheet.column_dimensions['B'].width = 30
                 
         except Exception as e:
             return jsonify({'error': f'خطأ في إنشاء ملف Excel: {str(e)}'}), 500

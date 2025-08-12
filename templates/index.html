@@ -1066,7 +1066,22 @@
                     companyCodeSelect.appendChild(option2);
                 });
                 
-                // تحميل الوظائف
+                // تحميل قائمة الوظائف
+                const jobSelect = document.getElementById('jobFilter');
+                const jobCodeSelect = document.getElementById('jobCode');
+                data.jobs.forEach(job => {
+                    const option1 = document.createElement('option');
+                    option1.value = job.code;
+                    option1.textContent = job.name;
+                    jobSelect.appendChild(option1);
+                    
+                    const option2 = document.createElement('option');
+                    option2.value = job.code;
+                    option2.textContent = job.name;
+                    jobCodeSelect.appendChild(option2);
+                });
+                
+                // تحميل الوظائف القديمة للتوافق
                 await loadJobs();
                 
             } catch (error) {

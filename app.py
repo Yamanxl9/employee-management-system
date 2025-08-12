@@ -207,6 +207,7 @@ def search_employees():
     query = request.args.get('query', '').strip()
     nationality = request.args.get('nationality', '')
     company = request.args.get('company', '')
+    job = request.args.get('job', '')
     passport_status = request.args.get('passport_status', '')
     card_status = request.args.get('card_status', '')
     page = int(request.args.get('page', 1))
@@ -228,6 +229,12 @@ def search_employees():
     
     if company:
         filter_query['company_code'] = company
+    
+    if job:
+        try:
+            filter_query['job_code'] = int(job)
+        except (ValueError, TypeError):
+            pass  # تجاهل القيم غير الصحيحة
     
     # إضافة فلاتر حالة الجواز والبطاقة لقاعدة البيانات مباشرة
     if passport_status == 'missing':
@@ -531,10 +538,12 @@ def get_statistics():
 def get_filters():
     nationalities = mongo.db.employees.distinct('nationality_code')
     companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, '_id': 0}))
+    jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, '_id': 0}).sort('job_code', 1))
     
     return jsonify({
         'nationalities': nationalities,
-        'companies': [{'code': c['company_code'], 'name': c['company_name_ara']} for c in companies]
+        'companies': [{'code': c['company_code'], 'name': c['company_name_ara']} for c in companies],
+        'jobs': [{'code': j['job_code'], 'name': j['job_ara']} for j in jobs]
     })
 
 @app.route('/api/test')
@@ -549,6 +558,7 @@ def employees_summary():
     query = request.args.get('query', '').strip()
     nationality = request.args.get('nationality', '')
     company = request.args.get('company', '')
+    job = request.args.get('job', '')
     passport_status = request.args.get('passport_status', '')
     card_status = request.args.get('card_status', '')
     page = int(request.args.get('page', 1))
@@ -569,6 +579,12 @@ def employees_summary():
     
     if company:
         filter_query['company_code'] = company
+    
+    if job:
+        try:
+            filter_query['job_code'] = int(job)
+        except (ValueError, TypeError):
+            pass  # تجاهل القيم غير الصحيحة
     
     # إضافة فلاتر حالة الجواز والبطاقة (نفس منطق البحث الرئيسي)
     if passport_status == 'missing':

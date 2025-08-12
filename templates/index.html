@@ -311,16 +311,18 @@
         
         /* تحسينات للتعريب وتثبيت مواضع الأزرار */
         .btn {
-            min-width: 120px !important;
+            min-width: 90px !important;
             white-space: nowrap !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             text-align: center !important;
+            padding: 8px 16px !important;
         }
         
         .btn-lg {
-            min-width: 140px !important;
+            min-width: 110px !important;
+            padding: 10px 20px !important;
         }
         
         /* تثبيت مواضع الأزرار في الهيدر */
@@ -445,16 +447,13 @@
             <div class="header-section">
                 <div class="header-actions">
                     <button class="btn language-toggle" onclick="toggleLanguage()">
-                        <i class="fas fa-language me-2"></i>
                         <span id="languageBtn">English</span>
                     </button>
                     <button class="btn logout-btn" onclick="logout()" title="تسجيل الخروج">
-                        <i class="fas fa-sign-out-alt me-2"></i>
                         <span id="logoutBtn">تسجيل خروج</span>
                     </button>
                 </div>
                 <h1 class="mb-3">
-                    <i class="fas fa-users me-3"></i>
                     <span id="mainTitle">مجموعة شركات العقيلي</span>
                 </h1>
                 <p class="lead mb-0" id="subTitle">Al-Aqeeli Group</p>
@@ -464,28 +463,24 @@
             <div class="row mb-4" id="statisticsSection">
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" onclick="showAllEmployees()">
-                        <i class="fas fa-users fa-2x mb-2"></i>
                         <h4 id="totalEmployees">0</h4>
                         <small id="totalEmployeesText">إجمالي الموظفين</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #dc3545, #fd7e14);" onclick="filterByPassportStatus('missing')">
-                        <i class="fas fa-passport fa-2x mb-2"></i>
                         <h4 id="passportMissing">0</h4>
                         <small id="passportMissingText">جوازات غير متوفرة</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #ffc107, #fd7e14);" onclick="filterByCardStatus('missing')">
-                        <i class="fas fa-id-card fa-2x mb-2"></i>
                         <h4 id="cardsMissing">0</h4>
                         <small id="cardsMissingText">بطاقات غير متوفرة</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #6f42c1, #e83e8c);" onclick="filterByCardStatus('expired')">
-                        <i class="fas fa-clock fa-2x mb-2"></i>
                         <h4 id="cardsExpired">0</h4>
                         <small id="cardsExpiredText">بطاقات منتهية</small>
                     </div>
@@ -496,20 +491,18 @@
             <div class="search-section">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="fw-bold text-primary">
-                        <i class="fas fa-filter me-2"></i>
-                        <span id="searchTitle">🔍 الفلاتر والتحكم</span>
+                        <span id="searchTitle">الفلاتر والتحكم</span>
                     </h4>
                     <div class="d-flex gap-2">
                         <button class="btn btn-add btn-lg" onclick="openAddModal()" style="border-radius: 25px;">
-                            <i class="fas fa-plus me-2"></i>
-                            <span id="addEmployeeBtn">➕ إضافة موظف جديد</span>
+                            <span id="addEmployeeBtn">إضافة موظف جديد</span>
                         </button>
                     </div>
                 </div>
                 
                 <div class="row mb-4">
                     <div class="col-md-12 mb-3">
-                        <label class="form-label fw-bold" id="searchLabel">🔍 البحث السريع (الاسم، رقم الموظف، رقم الجواز)</label>
+                        <label class="form-label fw-bold" id="searchLabel">البحث السريع (الاسم، رقم الموظف، رقم الجواز)</label>
                         <input type="text" class="form-control form-control-lg" id="searchQuery" 
                                placeholder="ابدأ الكتابة للبحث التلقائي..." 
                                style="border-radius: 25px; border: 2px solid #e9ecef; padding: 12px 20px;">
@@ -518,19 +511,19 @@
                 
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold" id="nationalityLabel">🌍 الجنسية</label>
+                        <label class="form-label fw-bold" id="nationalityLabel">الجنسية</label>
                         <select class="form-select" id="nationalityFilter" style="border-radius: 15px;">
                             <option value="" id="allNationalitiesOption">جميع الجنسيات</option>
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold" id="companyLabel">🏢 الشركة</label>
+                        <label class="form-label fw-bold" id="companyLabel">الشركة</label>
                         <select class="form-select" id="companyFilter" style="border-radius: 15px;">
                             <option value="" id="allCompaniesOption">جميع الشركات</option>
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold" id="jobLabel">💼 الوظيفة</label>
+                        <label class="form-label fw-bold" id="jobLabel">الوظيفة</label>
                         <select class="form-select" id="jobFilter" style="border-radius: 15px;">
                             <option value="" id="allJobsOption">جميع الوظائف</option>
                         </select>
@@ -539,22 +532,22 @@
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold" id="passportStatusLabel">📘 حالة الجواز</label>
+                        <label class="form-label fw-bold" id="passportStatusLabel">حالة الجواز</label>
                         <select class="form-select" id="passportStatusFilter" style="border-radius: 15px;">
                             <option value="" id="allPassportStatusOption">جميع الحالات</option>
-                            <option value="available" id="passportAvailableOption">✅ متوفر</option>
-                            <option value="missing" id="passportMissingOption">❌ غير متوفر</option>
+                            <option value="available" id="passportAvailableOption">متوفر</option>
+                            <option value="missing" id="passportMissingOption">غير متوفر</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold" id="cardStatusLabel">🆔 حالة البطاقة</label>
+                        <label class="form-label fw-bold" id="cardStatusLabel">حالة البطاقة</label>
                         <select class="form-select" id="cardStatusFilter" style="border-radius: 15px;">
                             <option value="" id="allCardStatusOption">جميع الحالات</option>
-                            <option value="valid" id="cardValidOption">✅ سارية</option>
-                            <option value="expiring_soon" id="cardExpiringSoonOption">⚠️ تنتهي قريباً</option>
-                            <option value="expired" id="cardExpiredOption">❌ منتهية</option>
-                            <option value="no_expiry" id="cardNoExpiryOption">♾️ بدون تاريخ انتهاء</option>
-                            <option value="missing" id="cardMissingOption">❓ غير متوفرة</option>
+                            <option value="valid" id="cardValidOption">سارية</option>
+                            <option value="expiring_soon" id="cardExpiringSoonOption">تنتهي قريباً</option>
+                            <option value="expired" id="cardExpiredOption">منتهية</option>
+                            <option value="no_expiry" id="cardNoExpiryOption">بدون تاريخ انتهاء</option>
+                            <option value="missing" id="cardMissingOption">غير متوفرة</option>
                         </select>
                     </div>
                 </div>
@@ -563,16 +556,13 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-center gap-3 flex-wrap">
                             <button class="btn btn-outline-secondary btn-lg" onclick="clearFilters()" style="border-radius: 20px;">
-                                <i class="fas fa-refresh me-2"></i>
                                 <span id="clearBtn">� إعادة تعيين</span>
                             </button>
                             <button class="btn btn-info btn-lg" onclick="toggleViewMode()" id="viewModeBtn" style="border-radius: 20px;">
-                                <i class="fas fa-list me-2"></i>
-                                <span id="viewModeText">📋 عرض مختصر</span>
+                                <span id="viewModeText">عرض مختصر</span>
                             </button>
                             <button class="btn btn-success btn-lg" onclick="exportFilteredResults()" style="border-radius: 20px;">
-                                <i class="fas fa-file-excel me-2"></i>
-                                <span id="exportBtn">📊 تصدير النتائج</span>
+                                <span id="exportBtn">تصدير النتائج</span>
                             </button>
                         </div>
                     </div>
@@ -818,24 +808,24 @@
                 passportMissingText: 'جوازات غير متوفرة',
                 cardsMissingText: 'بطاقات غير متوفرة',
                 cardsExpiredText: 'بطاقات منتهية',
-                searchTitle: '🔍 الفلاتر والتحكم',
-                addEmployeeBtn: '➕ إضافة موظف جديد',
-                searchLabel: '🔍 البحث السريع (الاسم، رقم الموظف، رقم الجواز)',
-                nationalityLabel: '🌍 الجنسية',
-                companyLabel: '🏢 الشركة',
-                jobLabel: '💼 الوظيفة',
-                passportStatusLabel: '📘 حالة الجواز',
-                cardStatusLabel: '🆔 حالة البطاقة',
-                clearBtn: '🔄 إعادة تعيين',
-                viewModeText: '📋 عرض مختصر',
-                summaryViewText: '📋 عرض تفصيلي',
+                searchTitle: 'الفلاتر والتحكم',
+                addEmployeeBtn: 'إضافة موظف جديد',
+                searchLabel: 'البحث السريع (الاسم، رقم الموظف، رقم الجواز)',
+                nationalityLabel: 'الجنسية',
+                companyLabel: 'الشركة',
+                jobLabel: 'الوظيفة',
+                passportStatusLabel: 'حالة الجواز',
+                cardStatusLabel: 'حالة البطاقة',
+                clearBtn: 'إعادة تعيين',
+                viewModeText: 'عرض مختصر',
+                summaryViewText: 'عرض تفصيلي',
                 employeeNoHeader: 'رقم الموظف',
                 nameHeader: 'الاسم',
                 nationalityHeader: 'الجنسية',
                 companyHeader: 'الشركة',
                 passportHeader: 'الجواز',
                 cardHeader: 'البطاقة',
-                exportBtn: '📊 تصدير النتائج',
+                exportBtn: 'تصدير النتائج',
                 allNationalitiesOption: 'جميع الجنسيات',
                 allCompaniesOption: 'جميع الشركات',
                 allJobsOption: 'جميع الوظائف',
@@ -883,24 +873,24 @@
                 passportMissingText: 'Missing Passports',
                 cardsMissingText: 'Missing Cards',
                 cardsExpiredText: 'Expired Cards',
-                searchTitle: '🔍 Filters & Control',
-                addEmployeeBtn: '➕ Add New Employee',
-                searchLabel: '🔍 Quick Search (Name, Employee No., Passport No.)',
-                nationalityLabel: '🌍 Nationality',
-                companyLabel: '🏢 Company',
-                jobLabel: '💼 Job',
-                passportStatusLabel: '📘 Passport Status',
-                cardStatusLabel: '🆔 Card Status',
-                clearBtn: '🔄 Reset',
-                viewModeText: '📋 Summary View',
-                summaryViewText: '📋 Detailed View',
+                searchTitle: 'Filters & Control',
+                addEmployeeBtn: 'Add New Employee',
+                searchLabel: 'Quick Search (Name, Employee No., Passport No.)',
+                nationalityLabel: 'Nationality',
+                companyLabel: 'Company',
+                jobLabel: 'Job',
+                passportStatusLabel: 'Passport Status',
+                cardStatusLabel: 'Card Status',
+                clearBtn: 'Reset',
+                viewModeText: 'Summary View',
+                summaryViewText: 'Detailed View',
                 employeeNoHeader: 'Employee No.',
                 nameHeader: 'Name',
                 nationalityHeader: 'Nationality',
                 companyHeader: 'Company',
                 passportHeader: 'Passport',
                 cardHeader: 'Card',
-                exportBtn: '📊 Export Results',
+                exportBtn: 'Export Results',
                 allNationalitiesOption: 'All Nationalities',
                 allCompaniesOption: 'All Companies',
                 allJobsOption: 'All Jobs',
@@ -985,16 +975,16 @@
             try {
                 const response = await fetch('/api/test');
                 if (response.ok) {
-                    console.log('✅ Server connection OK');
+                    console.log('Server connection OK');
                 } else {
-                    console.error('❌ Server response error:', response.status);
+                    console.error('Server response error:', response.status);
                 }
             } catch (error) {
-                console.error('❌ Server connection failed:', error);
+                console.error('Server connection failed:', error);
                 showNotification(
                     currentLanguage === 'ar' ? 
-                        'تعذر الاتصال بالخادم. تأكد من أن الخادم يعمل على المنفذ 5000 🔌' : 
-                        'Cannot connect to server. Make sure server is running on port 5000 🔌',
+                        'تعذر الاتصال بالخادم. تأكد من أن الخادم يعمل على المنفذ 5000' : 
+                        'Cannot connect to server. Make sure server is running on port 5000',
                     'error'
                 );
             }
@@ -1343,7 +1333,6 @@
                 if (data.employees.length === 0) {
                     resultsContainer.innerHTML = `
                         <div class="text-center text-muted py-5">
-                            <i class="fas fa-user-slash fa-3x mb-3"></i>
                             <h5>${currentLanguage === 'ar' ? 'لم يتم العثور على أي موظفين' : 'No employees found'}</h5>
                             <p>${currentLanguage === 'ar' ? 'جرب تعديل معايير البحث' : 'Try adjusting your search criteria'}</p>
                         </div>
@@ -1362,7 +1351,6 @@
                 loadingIndicator.style.display = 'none';
                 resultsContainer.innerHTML = `
                     <div class="alert alert-danger text-center">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
                         ${currentLanguage === 'ar' ? 'حدث خطأ في البحث. يرجى المحاولة مرة أخرى.' : 'Search error occurred. Please try again.'}
                     </div>
                 `;
@@ -1376,7 +1364,7 @@
             
             let resultsHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5><i class="fas fa-users me-2"></i>${currentLanguage === 'ar' ? 'النتائج' : 'Results'} (${data.total} ${currentLanguage === 'ar' ? 'موظف' : 'employees'})</h5>
+                    <h5>${currentLanguage === 'ar' ? 'النتائج' : 'Results'} (${data.total} ${currentLanguage === 'ar' ? 'موظف' : 'employees'})</h5>
                 </div>
             `;
             
@@ -1399,7 +1387,6 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <h6 class="card-title mb-2">
-                                    <i class="fas fa-user me-2"></i>
                                     ${isArabic ? employee.staff_name_ara : employee.staff_name}
                                 </h6>
                                 <p class="text-muted mb-2">${isArabic ? employee.staff_name : employee.staff_name_ara}</p>
@@ -1442,10 +1429,8 @@
                                     </div>
                                     <div class="action-buttons">
                                         <button class="btn btn-sm btn-outline-primary" onclick="editEmployee(${employee.staff_no})" title="${isArabic ? 'تعديل' : 'Edit'}">
-                                            <i class="fas fa-edit"></i>
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${employee.staff_no})" title="${isArabic ? 'حذف' : 'Delete'}">
-                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -1474,7 +1459,7 @@
             
             let resultsHTML = `
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5><i class="fas fa-list me-2"></i>${currentLanguage === 'ar' ? 'عرض مختصر' : 'Summary View'} (${data.total} ${currentLanguage === 'ar' ? 'موظف' : 'employees'})</h5>
+                    <h5>${currentLanguage === 'ar' ? 'عرض مختصر' : 'Summary View'} (${data.total} ${currentLanguage === 'ar' ? 'موظف' : 'employees'})</h5>
                 </div>
                 <div class="summary-view">
                     <table class="summary-table table mb-0">
@@ -1606,8 +1591,8 @@
             } catch (error) {
                 showNotification(
                     currentLanguage === 'ar' ? 
-                        'خطأ في تحميل بيانات الموظف: ' + error.message + ' ⚠️' : 
-                        'Error loading employee data: ' + error.message + ' ⚠️',
+                        'خطأ في تحميل بيانات الموظف: ' + error.message : 
+                        'Error loading employee data: ' + error.message,
                     'error'
                 );
                 console.error('Error:', error);
@@ -1661,7 +1646,7 @@
                     await loadStatistics();
                     await searchEmployees();
                     showNotification(
-                        currentLanguage === 'ar' ? 'تم حفظ البيانات بنجاح! 🎉' : 'Data saved successfully! 🎉',
+                        currentLanguage === 'ar' ? 'تم حفظ البيانات بنجاح!' : 'Data saved successfully!',
                         'success'
                     );
                 } else {
@@ -1705,7 +1690,7 @@
                     await loadStatistics();
                     await searchEmployees();
                     showNotification(
-                        currentLanguage === 'ar' ? 'تم حذف الموظف بنجاح 🗑️' : 'Employee deleted successfully 🗑️',
+                        currentLanguage === 'ar' ? 'تم حذف الموظف بنجاح' : 'Employee deleted successfully',
                         'success'
                     );
                 } else {
@@ -1756,7 +1741,7 @@
 
                 if (data.employees.length === 0) {
                     showNotification(
-                        currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير 📄' : 'No results to export 📄',
+                        currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير' : 'No results to export',
                         'warning'
                     );
                     return;
@@ -1799,7 +1784,7 @@
                     document.body.removeChild(a);
                     
                     showNotification(
-                        currentLanguage === 'ar' ? 'تم تصدير التقرير بنجاح 📊' : 'Report exported successfully 📊',
+                        currentLanguage === 'ar' ? 'تم تصدير التقرير بنجاح' : 'Report exported successfully',
                         'success'
                     );
                 } else {
@@ -1834,10 +1819,10 @@
         // دالة عرض الإشعارات المحسنة
         function showNotification(message, type = 'info', duration = 3000) {
             const icons = {
-                success: '✅',
-                error: '❌', 
-                warning: '⚠️',
-                info: 'ℹ️'
+                success: '',
+                error: '', 
+                warning: '',
+                info: ''
             };
             
             const icon = icons[type] || icons.info;

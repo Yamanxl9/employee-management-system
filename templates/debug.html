@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>تشخيص سريع للصفحة الرئيسية</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; direction: rtl; }
+        .test-btn { margin: 10px; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin: 10px; padding: 10px; border: 1px solid #ccc; }
+        .error { background: #ffebee; }
+        .success { background: #e8f5e8; }
+    </style>
+</head>
+<body>
+    <h1>تشخيص سريع للصفحة الرئيسية</h1>
+    
+    <button class="test-btn" onclick="checkToken()">1. فحص Token</button>
+    <button class="test-btn" onclick="testStatistics()">2. اختبار الإحصائيات</button>
+    <button class="test-btn" onclick="testFilters()">3. اختبار الفلاتر</button>
+    <button class="test-btn" onclick="checkElements()">4. فحص العناصر</button>
+    
+    <div id="results"></div>
+
+    <script>
+        function addResult(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'result ' + (isError ? 'error' : 'success');
+            div.innerHTML = message;
+            document.getElementById('results').appendChild(div);
+        }
+
+        function checkToken() {
+            const token = localStorage.getItem('authToken');
+            if (token) {
+                addResult(`✅ Token موجود: ${token.substring(0, 30)}...`);
+            } else {
+                addResult('❌ Token غير موجود في localStorage', true);
+            }
+        }
+
+        function getAuthHeaders() {
+            const token = localStorage.getItem('authToken');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            };
+        }
+
+        async function testStatistics() {
+            try {
+                addResult('🔄 جاري اختبار API الإحصائيات...');
+                
+                const response = await fetch('/api/statistics', {
+                    headers: getAuthHeaders()
+                });
+                
+                addResult(`📊 Status Code: ${response.status}`);
+                
+                if (response.status === 401) {
+                    addResult('❌ خطأ مصادقة - يجب تسجيل الدخول', true);
+                    return;
+                }
+                
+                const data = await response.json();
+                addResult(`✅ إجمالي الموظفين: ${data.total_employees}`);
+                addResult(`📝 جوازات مفقودة: ${data.passport_missing}`);
+                addResult(`💳 بطاقات مفقودة: ${data.cards_missing}`);
+                addResult(`⏰ بطاقات منتهية: ${data.cards_expired}`);
+                
+            } catch (error) {
+                addResult(`❌ خطأ: ${error.message}`, true);
+            }
+        }
+
+        async function testFilters() {
+            try {
+                addResult('🔄 جاري اختبار API الفلاتر...');
+                
+                const response = await fetch('/api/filters', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    addResult('❌ خطأ مصادقة في الفلاتر', true);
+                    return;
+                }
+                
+                const data = await response.json();
+                addResult(`✅ عدد الجنسيات: ${data.nationalities.length}`);
+                addResult(`✅ عدد الشركات: ${data.companies.length}`);
+                addResult(`✅ عدد الوظائف: ${data.jobs.length}`);
+                
+            } catch (error) {
+                addResult(`❌ خطأ في الفلاتر: ${error.message}`, true);
+            }
+        }
+
+        function checkElements() {
+            const elements = [
+                'totalEmployees',
+                'passportMissing', 
+                'cardsMissing',
+                'cardsExpired'
+            ];
+            
+            elements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    addResult(`✅ عنصر ${id} موجود`);
+                } else {
+                    addResult(`❌ عنصر ${id} غير موجود`, true);
+                }
+            });
+        }
+
+        // فحص تلقائي عند تحميل الصفحة
+        window.onload = function() {
+            addResult('🚀 بدء التشخيص...');
+            checkToken();
+        };
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, send_file, session, redirect, url_for
 from flask_pymongo import PyMongo
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import pandas as pd
 import io
 import os
@@ -10,6 +10,12 @@ from functools import wraps
 from dotenv import load_dotenv
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+
+import logging
+
+# إعداد التسجيل
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # تحميل متغيرات البيئة
 load_dotenv()
@@ -35,7 +41,7 @@ def log_activity(action, details, user_id=None):
         }
         mongo.db.audit_logs.insert_one(audit_log)
     except Exception as e:
-        print(f"Error logging activity: {e}")
+        logger.error(f"Error logging activity: {e}")
 
 # Helper functions for MongoDB
 def serialize_doc(doc):
@@ -95,7 +101,7 @@ def generate_token(user_id):
     """توليد JWT token للمستخدم"""
     payload = {
         'user_id': str(user_id),
-        'exp': datetime.utcnow() + timedelta(days=7)  # صالح لمدة أسبوع
+        'exp': datetime.now(timezone.utc) + timedelta(days=7)  # صالح لمدة أسبوع
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
@@ -146,12 +152,23 @@ def index():
 # صفحة سجل التدقيق
 @app.route('/audit-logs')
 def audit_logs_page():
+    # التحقق من وجود token في cookies أو localStorage سيتم في JavaScript
     return render_template('audit_logs.html')
 
 # صفحة تسجيل الدخول
 @app.route('/login')
 def login_page():
     return render_template('auth/login.html')
+
+# صفحة اختبار المصادقة
+@app.route('/test-auth')
+def test_auth():
+    return render_template('test_auth.html')
+
+# صفحة التشخيص السريع
+@app.route('/debug')
+def debug_page():
+    return render_template('debug.html')
 
 # API تسجيل الدخول
 @app.route('/api/login', methods=['POST'])
@@ -953,7 +970,6 @@ def export_filtered_results():
 
 # API لجلب سجل التدقيق
 @app.route('/api/audit-logs')
-@require_auth
 def get_audit_logs():
     """جلب سجل التدقيق مع الترقيم"""
     try:

@@ -726,12 +726,9 @@
     <script>
         // فحص فوري للمصادقة
         (function() {
-            console.log('Immediate auth check starting...');
             const token = localStorage.getItem('authToken');
-            console.log('Initial token check:', token);
             
             if (!token || token === 'null' || token === 'undefined' || token === '' || token === 'demo-token') {
-                console.log('No valid token, redirecting immediately...');
                 localStorage.removeItem('authToken');
                 window.location.href = '/login';
                 return;
@@ -741,14 +738,11 @@
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 if (payload.exp * 1000 < Date.now()) {
-                    console.log('Token expired, redirecting...');
                     localStorage.removeItem('authToken');
                     window.location.href = '/login';
                     return;
                 }
-                console.log('Token valid, allowing page load');
             } catch (error) {
-                console.log('Invalid token format, redirecting...');
                 localStorage.removeItem('authToken');
                 window.location.href = '/login';
                 return;
@@ -766,11 +760,9 @@
         // التحقق من تسجيل الدخول
         function checkAuth() {
             const token = localStorage.getItem('authToken');
-            console.log('Checking auth token:', token); // للتشخيص
             
             // التحقق من وجود token صالح
             if (!token || token === 'demo-token' || token === 'null' || token === '' || token === 'undefined') {
-                console.log('No valid token found, redirecting to login');
                 localStorage.removeItem('authToken'); // تنظيف
                 window.location.href = '/login';
                 return false;
@@ -779,19 +771,15 @@
             // التحقق من صحة JWT token
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
-                console.log('Token payload:', payload);
                 
                 if (payload.exp * 1000 < Date.now()) {
-                    console.log('Token expired, redirecting to login');
                     localStorage.removeItem('authToken');
                     window.location.href = '/login';
                     return false;
                 }
                 
-                console.log('Token is valid');
                 return true;
             } catch (error) {
-                console.error('Token parsing error:', error);
                 localStorage.removeItem('authToken');
                 window.location.href = '/login';
                 return false;
@@ -821,20 +809,55 @@
 
         // التحقق من تسجيل الدخول عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Page loaded, checking authentication...');
+            console.log('📄 DOM Content Loaded!');
+            
             // تنظيف tokens غير صالحة
             const token = localStorage.getItem('authToken');
+            console.log('🔑 Current token:', token ? 'exists' : 'null');
+            
             if (!token || token === 'null' || token === 'undefined' || token === '') {
                 localStorage.removeItem('authToken');
             }
             
+            console.log('🔐 Starting authentication check...');
             if (!checkAuth()) {
+                console.log('❌ Authentication failed - redirecting');
                 return;
             }
             
+            console.log('✅ Authentication successful - starting app initialization');
             // إذا وصل هنا، المستخدم مسجل دخول - تحميل البيانات
-            console.log('User authenticated, loading data...');
+            initializeApp();
         });
+
+        // تهيئة التطبيق بعد تسجيل الدخول
+        function initializeApp() {
+            console.log('🚀 Initializing app...');
+            
+            // تحميل اللغة المحفوظة
+            const savedLanguage = localStorage.getItem('selectedLanguage');
+            if (savedLanguage && (savedLanguage === 'ar' || savedLanguage === 'en')) {
+                currentLanguage = savedLanguage;
+            }
+            
+            // تأخير updateLanguage قليلاً للتأكد من جاهزية DOM
+            setTimeout(() => {
+                console.log('🌐 Updating language...');
+                updateLanguage(); // تطبيق اللغة المحفوظة
+            }, 100);
+            
+            // اختبار الاتصال بالخادم أولاً
+            testConnection();
+            
+            loadStatistics();
+            loadFilters();
+            loadEmployees(); // تحميل الموظفين تلقائياً
+            
+            // إعداد Event Listeners
+            setupEventListeners();
+            
+            console.log('✅ App initialized successfully!');
+        }
 
         // النصوص بالعربية والإنجليزية
         const translations = {
@@ -969,23 +992,10 @@
                 confirmDeleteBtn: 'Delete'
             }
         };
-
-        // تحميل البيانات عند تحميل الصفحة
-        document.addEventListener('DOMContentLoaded', function() {
-            // تحميل اللغة المحفوظة
-            const savedLanguage = localStorage.getItem('selectedLanguage');
-            if (savedLanguage && (savedLanguage === 'ar' || savedLanguage === 'en')) {
-                currentLanguage = savedLanguage;
-            }
-            updateLanguage(); // تطبيق اللغة المحفوظة
-            
-            // اختبار الاتصال بالخادم أولاً
-            testConnection();
-            
-            loadStatistics();
-            loadFilters();
             loadEmployees(); // تحميل الموظفين تلقائياً
             
+        // إعداد event listeners
+        function setupEventListeners() {
             // البحث عند الضغط على Enter
             document.getElementById('searchQuery').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
@@ -1008,19 +1018,16 @@
             document.getElementById('jobFilter').addEventListener('change', searchEmployees);
             document.getElementById('passportStatusFilter').addEventListener('change', searchEmployees);
             document.getElementById('cardStatusFilter').addEventListener('change', searchEmployees);
-        });
+        }
 
         // اختبار الاتصال بالخادم
         async function testConnection() {
             try {
                 const response = await fetch('/api/test');
-                if (response.ok) {
-                    console.log('Server connection OK');
-                } else {
-                    console.error('Server response error:', response.status);
+                if (!response.ok) {
+                    // خطأ في الاتصال بالخادم
                 }
             } catch (error) {
-                console.error('Server connection failed:', error);
                 showNotification(
                     currentLanguage === 'ar' ? 
                         'تعذر الاتصال بالخادم. تأكد من أن الخادم يعمل على المنفذ 5000' : 
@@ -1039,95 +1046,114 @@
 
         // تحديث النصوص حسب اللغة
         function updateLanguage() {
-            const t = translations[currentLanguage];
-            const isEnglish = currentLanguage === 'en';
-            
-            // تحديث اتجاه الصفحة
-            document.getElementById('htmlElement').setAttribute('lang', currentLanguage);
-            document.getElementById('htmlElement').setAttribute('dir', isEnglish ? 'ltr' : 'rtl');
-            document.body.className = isEnglish ? 'english' : '';
-            
-            // تحديث النصوص الأساسية
-            document.getElementById('pageTitle').textContent = t.pageTitle;
-            document.getElementById('languageBtn').textContent = t.languageBtn;
-            document.getElementById('logoutBtn').textContent = t.logoutBtn;
-            document.getElementById('mainTitle').textContent = t.mainTitle;
-            document.getElementById('subTitle').textContent = t.subTitle;
-            
-            // تحديث الإحصائيات
-            document.getElementById('totalEmployeesText').textContent = t.totalEmployeesText;
-            document.getElementById('passportMissingText').textContent = t.passportMissingText;
-            document.getElementById('cardsMissingText').textContent = t.cardsMissingText;
-            document.getElementById('cardsExpiredText').textContent = t.cardsExpiredText;
-            
-            // تحديث قسم البحث والفلاتر
-            document.getElementById('searchTitle').textContent = t.searchTitle;
-            document.getElementById('addEmployeeBtn').textContent = t.addEmployeeBtn;
-            document.getElementById('searchLabel').textContent = t.searchLabel;
-            document.getElementById('nationalityLabel').textContent = t.nationalityLabel;
-            document.getElementById('companyLabel').textContent = t.companyLabel;
-            
-            // تحديث تسمية فلتر الوظائف
-            const jobLabel = document.getElementById('jobLabel');
-            if (jobLabel) {
-                jobLabel.textContent = t.jobLabel;
+            try {
+                console.log('🌐 Starting language update...');
+                const t = translations[currentLanguage];
+                if (!t) {
+                    console.warn('❌ No translations found for language:', currentLanguage);
+                    return;
+                }
+                
+                const isEnglish = currentLanguage === 'en';
+                
+                // دالة مساعدة لتحديث النص بأمان
+                function safeUpdateText(id, text) {
+                    try {
+                        const element = document.getElementById(id);
+                        if (element && text) {
+                            element.textContent = text;
+                        } else if (!element) {
+                            console.warn(`Element with id '${id}' not found`);
+                        }
+                    } catch (error) {
+                        console.error(`Error updating element '${id}':`, error);
+                    }
+                }
+                
+                // تحديث اتجاه الصفحة
+                try {
+                    const htmlElement = document.getElementById('htmlElement');
+                    if (htmlElement) {
+                        htmlElement.setAttribute('lang', currentLanguage);
+                        htmlElement.setAttribute('dir', isEnglish ? 'ltr' : 'rtl');
+                    }
+                    
+                    if (document.body) {
+                        document.body.className = isEnglish ? 'english' : '';
+                    }
+                } catch (error) {
+                    console.error('Error updating page direction:', error);
+                }
+                
+                // تحديث النصوص الأساسية
+                safeUpdateText('pageTitle', t.pageTitle);
+                safeUpdateText('languageBtn', t.languageBtn);
+                safeUpdateText('logoutBtn', t.logoutBtn);
+                safeUpdateText('mainTitle', t.mainTitle);
+                safeUpdateText('subTitle', t.subTitle);
+                
+                // تحديث الإحصائيات
+                safeUpdateText('totalEmployeesText', t.totalEmployeesText);
+                safeUpdateText('passportMissingText', t.passportMissingText);
+                safeUpdateText('cardsMissingText', t.cardsMissingText);
+                safeUpdateText('cardsExpiredText', t.cardsExpiredText);
+                
+                // تحديث قسم البحث والفلاتر
+                safeUpdateText('searchTitle', t.searchTitle);
+                safeUpdateText('addEmployeeBtn', t.addEmployeeBtn);
+                safeUpdateText('searchLabel', t.searchLabel);
+                safeUpdateText('nationalityLabel', t.nationalityLabel);
+                safeUpdateText('companyLabel', t.companyLabel);
+                safeUpdateText('jobLabel', t.jobLabel);
+                safeUpdateText('passportStatusLabel', t.passportStatusLabel);
+                safeUpdateText('cardStatusLabel', t.cardStatusLabel);
+                safeUpdateText('clearBtn', t.clearBtn);
+                
+                // تحديث أزرار العرض والتصدير
+                safeUpdateText('viewModeText', t.viewModeText);
+                safeUpdateText('exportBtn', t.exportBtn);
+                
+                // تحديث خيارات الفلاتر
+                safeUpdateText('allNationalitiesOption', t.allNationalitiesOption);
+                safeUpdateText('allCompaniesOption', t.allCompaniesOption);
+                safeUpdateText('allJobsOption', t.allJobsOption);
+                safeUpdateText('allPassportStatusOption', t.allPassportStatusOption);
+                safeUpdateText('passportAvailableOption', t.passportAvailableOption);
+                safeUpdateText('passportMissingOption', t.passportMissingOption);
+                safeUpdateText('allCardStatusOption', t.allCardStatusOption);
+                safeUpdateText('cardValidOption', t.cardValidOption);
+                safeUpdateText('cardExpiringSoonOption', t.cardExpiringSoonOption);
+                safeUpdateText('cardExpiredOption', t.cardExpiredOption);
+                safeUpdateText('cardNoExpiryOption', t.cardNoExpiryOption);
+                safeUpdateText('cardMissingOption', t.cardMissingOption);
+                
+                // تحديث المودال
+                safeUpdateText('staffNoLabel', t.staffNoLabel);
+                safeUpdateText('jobCodeLabel', t.jobCodeLabel);
+                safeUpdateText('staffNameLabel', t.staffNameLabel);
+                safeUpdateText('staffNameAraLabel', t.staffNameAraLabel);
+                safeUpdateText('nationalityCodeLabel', t.nationalityCodeLabel);
+                safeUpdateText('companyCodeLabel', t.companyCodeLabel);
+                safeUpdateText('passNoLabel', t.passNoLabel);
+                safeUpdateText('cardNoLabel', t.cardNoLabel);
+                safeUpdateText('cardExpiryLabel', t.cardExpiryLabel);
+                safeUpdateText('selectJobOption', t.selectJobOption);
+                safeUpdateText('selectNationalityOption', t.selectNationalityOption);
+                safeUpdateText('selectCompanyOption', t.selectCompanyOption);
+                safeUpdateText('cancelBtn', t.cancelBtn);
+                safeUpdateText('saveBtn', t.saveBtn);
+                
+                // تحديث مودال الحذف
+                safeUpdateText('deleteModalTitle', t.deleteModalTitle);
+                safeUpdateText('deleteModalBody', t.deleteModalBody);
+                safeUpdateText('cancelDeleteBtn', t.cancelDeleteBtn);
+                safeUpdateText('confirmDeleteBtn', t.confirmDeleteBtn);
+                
+                console.log('✅ Language update completed successfully!');
+            } catch (error) {
+                console.error('❌ Critical error in updateLanguage:', error);
+                // لا تتوقف - استمر في تنفيذ باقي الكود
             }
-            
-            document.getElementById('passportStatusLabel').textContent = t.passportStatusLabel;
-            document.getElementById('cardStatusLabel').textContent = t.cardStatusLabel;
-            document.getElementById('clearBtn').textContent = t.clearBtn;
-            
-            // تحديث أزرار العرض والتصدير
-            const viewModeBtn = document.getElementById('viewModeBtn');
-            if (viewModeBtn) {
-                document.getElementById('viewModeText').textContent = t.viewModeText;
-            }
-            const exportBtn = document.getElementById('exportBtn');
-            if (exportBtn) {
-                exportBtn.textContent = t.exportBtn;
-            }
-            
-            // تحديث خيارات الفلاتر
-            document.getElementById('allNationalitiesOption').textContent = t.allNationalitiesOption;
-            document.getElementById('allCompaniesOption').textContent = t.allCompaniesOption;
-            
-            // تحديث خيارات الوظائف
-            const allJobsOption = document.getElementById('allJobsOption');
-            if (allJobsOption) {
-                allJobsOption.textContent = t.allJobsOption;
-            }
-            
-            document.getElementById('allPassportStatusOption').textContent = t.allPassportStatusOption;
-            document.getElementById('passportAvailableOption').textContent = t.passportAvailableOption;
-            document.getElementById('passportMissingOption').textContent = t.passportMissingOption;
-            document.getElementById('allCardStatusOption').textContent = t.allCardStatusOption;
-            document.getElementById('cardValidOption').textContent = t.cardValidOption;
-            document.getElementById('cardExpiringSoonOption').textContent = t.cardExpiringSoonOption;
-            document.getElementById('cardExpiredOption').textContent = t.cardExpiredOption;
-            document.getElementById('cardNoExpiryOption').textContent = t.cardNoExpiryOption;
-            document.getElementById('cardMissingOption').textContent = t.cardMissingOption;
-            
-            // تحديث المودال
-            document.getElementById('staffNoLabel').textContent = t.staffNoLabel;
-            document.getElementById('jobCodeLabel').textContent = t.jobCodeLabel;
-            document.getElementById('staffNameLabel').textContent = t.staffNameLabel;
-            document.getElementById('staffNameAraLabel').textContent = t.staffNameAraLabel;
-            document.getElementById('nationalityCodeLabel').textContent = t.nationalityCodeLabel;
-            document.getElementById('companyCodeLabel').textContent = t.companyCodeLabel;
-            document.getElementById('passNoLabel').textContent = t.passNoLabel;
-            document.getElementById('cardNoLabel').textContent = t.cardNoLabel;
-            document.getElementById('cardExpiryLabel').textContent = t.cardExpiryLabel;
-            document.getElementById('selectJobOption').textContent = t.selectJobOption;
-            document.getElementById('selectNationalityOption').textContent = t.selectNationalityOption;
-            document.getElementById('selectCompanyOption').textContent = t.selectCompanyOption;
-            document.getElementById('cancelBtn').textContent = t.cancelBtn;
-            document.getElementById('saveBtn').textContent = t.saveBtn;
-            
-            // تحديث مودال الحذف
-            document.getElementById('deleteModalTitle').textContent = t.deleteModalTitle;
-            document.getElementById('deleteModalBody').textContent = t.deleteModalBody;
-            document.getElementById('cancelDeleteBtn').textContent = t.cancelDeleteBtn;
-            document.getElementById('confirmDeleteBtn').textContent = t.confirmDeleteBtn;
         }
 
         // تحميل الإحصائيات
@@ -1150,75 +1176,111 @@
                 document.getElementById('cardsMissing').textContent = data.cards_missing;
                 document.getElementById('cardsExpired').textContent = data.cards_expired;
             } catch (error) {
-                console.error('خطأ في تحميل الإحصائيات:', error);
+                // خطأ في تحميل الإحصائيات
             }
         }
 
         // تحميل قوائم الفلاتر
         async function loadFilters() {
+            console.log('🔄 Starting loadFilters...');
             try {
                 const response = await fetch('/api/filters', {
                     headers: getAuthHeaders()
                 });
                 
+                console.log('📡 Filters API response status:', response.status);
+                
                 if (response.status === 401) {
+                    console.log('❌ Unauthorized - redirecting to login');
                     localStorage.removeItem('authToken');
                     window.location.href = '/login';
                     return;
                 }
                 
                 const data = await response.json();
+                console.log('📊 Filters data received:', data);
                 
                 // تحميل قائمة الجنسيات
                 const nationalitySelect = document.getElementById('nationalityFilter');
                 const nationalityCodeSelect = document.getElementById('nationalityCode');
+                
+                // تنظيف الخيارات القديمة (عدا الخيار الافتراضي)
+                nationalitySelect.innerHTML = '<option value="">جميع الجنسيات</option>';
+                if (nationalityCodeSelect) {
+                    nationalityCodeSelect.innerHTML = '<option value="">اختر الجنسية</option>';
+                }
+                
                 data.nationalities.forEach(nationality => {
                     const option1 = document.createElement('option');
                     option1.value = nationality;
                     option1.textContent = nationality;
                     nationalitySelect.appendChild(option1);
                     
-                    const option2 = document.createElement('option');
-                    option2.value = nationality;
-                    option2.textContent = nationality;
-                    nationalityCodeSelect.appendChild(option2);
+                    if (nationalityCodeSelect) {
+                        const option2 = document.createElement('option');
+                        option2.value = nationality;
+                        option2.textContent = nationality;
+                        nationalityCodeSelect.appendChild(option2);
+                    }
                 });
+                
+                console.log('✅ Nationalities loaded:', data.nationalities.length);
                 
                 // تحميل قائمة الشركات
                 const companySelect = document.getElementById('companyFilter');
                 const companyCodeSelect = document.getElementById('companyCode');
+                
+                // تنظيف الخيارات القديمة
+                companySelect.innerHTML = '<option value="">جميع الشركات</option>';
+                if (companyCodeSelect) {
+                    companyCodeSelect.innerHTML = '<option value="">اختر الشركة</option>';
+                }
+                
                 data.companies.forEach(company => {
                     const option1 = document.createElement('option');
                     option1.value = company.code;
                     option1.textContent = company.name;
                     companySelect.appendChild(option1);
                     
-                    const option2 = document.createElement('option');
-                    option2.value = company.code;
-                    option2.textContent = company.name;
-                    companyCodeSelect.appendChild(option2);
+                    if (companyCodeSelect) {
+                        const option2 = document.createElement('option');
+                        option2.value = company.code;
+                        option2.textContent = company.name;
+                        companyCodeSelect.appendChild(option2);
+                    }
                 });
+                
+                console.log('✅ Companies loaded:', data.companies.length);
                 
                 // تحميل قائمة الوظائف
                 const jobSelect = document.getElementById('jobFilter');
                 const jobCodeSelect = document.getElementById('jobCode');
+                
+                // تنظيف الخيارات القديمة
+                jobSelect.innerHTML = '<option value="">جميع الوظائف</option>';
+                if (jobCodeSelect) {
+                    jobCodeSelect.innerHTML = '<option value="">اختر الوظيفة</option>';
+                }
+                
                 data.jobs.forEach(job => {
                     const option1 = document.createElement('option');
                     option1.value = job.code;
                     option1.textContent = job.name;
                     jobSelect.appendChild(option1);
                     
-                    const option2 = document.createElement('option');
-                    option2.value = job.code;
-                    option2.textContent = job.name;
-                    jobCodeSelect.appendChild(option2);
+                    if (jobCodeSelect) {
+                        const option2 = document.createElement('option');
+                        option2.value = job.code;
+                        option2.textContent = job.name;
+                        jobCodeSelect.appendChild(option2);
+                    }
                 });
                 
-                // تحميل الوظائف القديمة للتوافق
-                await loadJobs();
+                console.log('✅ Jobs loaded:', data.jobs.length);
+                console.log('🎉 All filters loaded successfully!');
                 
             } catch (error) {
-                console.error('خطأ في تحميل الفلاتر:', error);
+                console.error('❌ Error loading filters:', error);
             }
         }
 
@@ -1577,8 +1639,59 @@
             paginationContainer.innerHTML = paginationHTML;
         }
 
+        // تحميل بيانات المودال (الوظائف، الشركات، الجنسيات)
+        async function loadModalData() {
+            try {
+                const response = await fetch('/api/filters', {
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                // تحميل قائمة الجنسيات في المودال
+                const nationalityCodeSelect = document.getElementById('nationalityCode');
+                nationalityCodeSelect.innerHTML = '<option value="" id="selectNationalityOption">اختر الجنسية</option>';
+                data.nationalities.forEach(nationality => {
+                    const option = document.createElement('option');
+                    option.value = nationality;
+                    option.textContent = nationality;
+                    nationalityCodeSelect.appendChild(option);
+                });
+                
+                // تحميل قائمة الشركات في المودال
+                const companyCodeSelect = document.getElementById('companyCode');
+                companyCodeSelect.innerHTML = '<option value="" id="selectCompanyOption">اختر الشركة</option>';
+                data.companies.forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company.code;
+                    option.textContent = company.name;
+                    companyCodeSelect.appendChild(option);
+                });
+                
+                // تحميل قائمة الوظائف في المودال
+                const jobCodeSelect = document.getElementById('jobCode');
+                jobCodeSelect.innerHTML = '<option value="" id="selectJobOption">اختر الوظيفة</option>';
+                data.jobs.forEach(job => {
+                    const option = document.createElement('option');
+                    option.value = job.code;
+                    option.textContent = job.name;
+                    jobCodeSelect.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error('خطأ في تحميل بيانات المودال:', error);
+                showNotification('خطأ في تحميل بيانات النموذج', 'error');
+            }
+        }
+
         // فتح نافذة إضافة موظف
-        function openAddModal() {
+        async function openAddModal() {
             isEditMode = false;
             currentEmployeeId = null;
             document.getElementById('modalTitle').textContent = translations[currentLanguage].modalTitle;
@@ -1586,6 +1699,9 @@
             // مسح الحقول
             document.getElementById('employeeForm').reset();
             document.getElementById('staffNo').disabled = false;
+            
+            // تحميل بيانات المودال
+            await loadModalData();
             
             // فتح المودال
             new bootstrap.Modal(document.getElementById('employeeModal')).show();
@@ -1614,6 +1730,9 @@
                 isEditMode = true;
                 currentEmployeeId = staffNo;
                 document.getElementById('modalTitle').textContent = translations[currentLanguage].editModalTitle;
+                
+                // تحميل بيانات المودال أولاً
+                await loadModalData();
                 
                 // ملء البيانات
                 document.getElementById('staffNo').value = employee.staff_no || '';
@@ -1854,8 +1973,16 @@
             document.getElementById('passportStatusFilter').value = '';
             document.getElementById('cardStatusFilter').value = '';
             
+            // مسح النتائج
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <h5>${currentLanguage === 'ar' ? 'استخدم البحث والفلاتر للعثور على الموظفين' : 'Use search and filters to find employees'}</h5>
+                    <p>${currentLanguage === 'ar' ? 'ابدأ بكتابة اسم الموظف أو اختر فلاتر للبحث' : 'Start typing employee name or select filters to search'}</p>
+                </div>
+            `;
+            
             currentPage = 1;
-            loadEmployees();
         }
         
         // دالة عرض الإشعارات المحسنة

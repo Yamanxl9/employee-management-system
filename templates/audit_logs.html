@@ -317,12 +317,12 @@
         };
         
         function checkAuth() {
-            const token = localStorage.getItem('auth_token');
+            const token = localStorage.getItem('authToken');
             return token !== null;
         }
         
         function logout() {
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem('authToken');
             showToast('تم تسجيل الخروج بنجاح', 'success');
             setTimeout(() => {
                 window.location.href = '/login';
@@ -369,7 +369,7 @@
             
             try {
                 const actionFilter = document.getElementById('actionFilter').value;
-                const token = localStorage.getItem('auth_token');
+                const token = localStorage.getItem('authToken');
                 
                 const response = await fetch(`/api/audit-logs?page=${page}&per_page=10&action=${actionFilter}`, {
                     headers: {
@@ -379,7 +379,7 @@
                 });
                 
                 if (response.status === 401) {
-                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('authToken');
                     window.location.href = '/login';
                     return;
                 }
@@ -483,7 +483,7 @@
             }
             
             try {
-                const token = localStorage.getItem('auth_token');
+                const token = localStorage.getItem('authToken');
                 
                 const response = await fetch('/api/audit-logs/cleanup', {
                     method: 'POST',

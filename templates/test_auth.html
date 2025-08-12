@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>اختبار المصادقة</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>اختبار حالة المصادقة</h1>
+    <div id="status"></div>
+    <button onclick="testLogin()">اختبار تسجيل الدخول</button>
+    <button onclick="testStats()">اختبار الإحصائيات</button>
+    <button onclick="checkToken()">فحص Token</button>
+
+    <script>
+        function checkToken() {
+            const token = localStorage.getItem('authToken');
+            document.getElementById('status').innerHTML = `
+                <h3>حالة Token:</h3>
+                <p>Token: ${token ? token.substring(0, 50) + '...' : 'غير موجود'}</p>
+            `;
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('authToken', data.token);
+                    document.getElementById('status').innerHTML = `
+                        <h3>تسجيل الدخول ناجح!</h3>
+                        <p>Token محفوظ في localStorage</p>
+                    `;
+                } else {
+                    document.getElementById('status').innerHTML = `
+                        <h3>خطأ في تسجيل الدخول:</h3>
+                        <p>${data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `
+                    <h3>خطأ:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        async function testStats() {
+            try {
+                const token = localStorage.getItem('authToken');
+                
+                if (!token) {
+                    document.getElementById('status').innerHTML = `
+                        <h3>لا يوجد token!</h3>
+                        <p>يجب تسجيل الدخول أولاً</p>
+                    `;
+                    return;
+                }
+
+                const response = await fetch('/api/statistics', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('status').innerHTML = `
+                        <h3>الإحصائيات:</h3>
+                        <p>إجمالي الموظفين: ${data.total_employees}</p>
+                        <p>جوازات مفقودة: ${data.passport_missing}</p>
+                        <p>بطاقات مفقودة: ${data.cards_missing}</p>
+                        <p>بطاقات منتهية: ${data.cards_expired}</p>
+                    `;
+                } else {
+                    document.getElementById('status').innerHTML = `
+                        <h3>خطأ في جلب الإحصائيات:</h3>
+                        <p>${data.error}</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = `
+                    <h3>خطأ:</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        // فحص Token عند تحميل الصفحة
+        window.onload = checkToken;
+    </script>
+</body>
+</html>

@@ -447,13 +447,16 @@
             <div class="header-section">
                 <div class="header-actions">
                     <button class="btn language-toggle" onclick="toggleLanguage()">
+                        <i class="fas fa-language me-2"></i>
                         <span id="languageBtn">English</span>
                     </button>
                     <button class="btn logout-btn" onclick="logout()" title="تسجيل الخروج">
+                        <i class="fas fa-sign-out-alt me-2"></i>
                         <span id="logoutBtn">تسجيل خروج</span>
                     </button>
                 </div>
                 <h1 class="mb-3">
+                    <i class="fas fa-building me-3"></i>
                     <span id="mainTitle">مجموعة شركات العقيلي</span>
                 </h1>
                 <p class="lead mb-0" id="subTitle">Al-Aqeeli Group</p>
@@ -463,24 +466,28 @@
             <div class="row mb-4" id="statisticsSection">
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" onclick="showAllEmployees()">
+                        <i class="fas fa-users fa-2x mb-2"></i>
                         <h4 id="totalEmployees">0</h4>
                         <small id="totalEmployeesText">إجمالي الموظفين</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #dc3545, #fd7e14);" onclick="filterByPassportStatus('missing')">
+                        <i class="fas fa-passport fa-2x mb-2"></i>
                         <h4 id="passportMissing">0</h4>
                         <small id="passportMissingText">جوازات غير متوفرة</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #ffc107, #fd7e14);" onclick="filterByCardStatus('missing')">
+                        <i class="fas fa-id-card fa-2x mb-2"></i>
                         <h4 id="cardsMissing">0</h4>
                         <small id="cardsMissingText">بطاقات غير متوفرة</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #6f42c1, #e83e8c);" onclick="filterByCardStatus('expired')">
+                        <i class="fas fa-clock fa-2x mb-2"></i>
                         <h4 id="cardsExpired">0</h4>
                         <small id="cardsExpiredText">بطاقات منتهية</small>
                     </div>
@@ -491,10 +498,12 @@
             <div class="search-section">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="fw-bold text-primary">
+                        <i class="fas fa-search me-2"></i>
                         <span id="searchTitle">الفلاتر والتحكم</span>
                     </h4>
                     <div class="d-flex gap-2">
                         <button class="btn btn-add btn-lg" onclick="openAddModal()" style="border-radius: 25px;">
+                            <i class="fas fa-plus me-2"></i>
                             <span id="addEmployeeBtn">إضافة موظف جديد</span>
                         </button>
                     </div>
@@ -556,12 +565,15 @@
                     <div class="col-12">
                         <div class="d-flex justify-content-center gap-3 flex-wrap">
                             <button class="btn btn-outline-secondary btn-lg" onclick="clearFilters()" style="border-radius: 20px;">
-                                <span id="clearBtn">� إعادة تعيين</span>
+                                <i class="fas fa-redo me-2"></i>
+                                <span id="clearBtn">إعادة تعيين</span>
                             </button>
                             <button class="btn btn-info btn-lg" onclick="toggleViewMode()" id="viewModeBtn" style="border-radius: 20px;">
+                                <i class="fas fa-list me-2"></i>
                                 <span id="viewModeText">عرض مختصر</span>
                             </button>
                             <button class="btn btn-success btn-lg" onclick="exportFilteredResults()" style="border-radius: 20px;">
+                                <i class="fas fa-file-excel me-2"></i>
                                 <span id="exportBtn">تصدير النتائج</span>
                             </button>
                         </div>
@@ -1429,8 +1441,10 @@
                                     </div>
                                     <div class="action-buttons">
                                         <button class="btn btn-sm btn-outline-primary" onclick="editEmployee(${employee.staff_no})" title="${isArabic ? 'تعديل' : 'Edit'}">
+                                            <i class="fas fa-edit"></i>
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${employee.staff_no})" title="${isArabic ? 'حذف' : 'Delete'}">
+                                            <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -1819,10 +1833,10 @@
         // دالة عرض الإشعارات المحسنة
         function showNotification(message, type = 'info', duration = 3000) {
             const icons = {
-                success: '',
-                error: '', 
-                warning: '',
-                info: ''
+                success: '✅',
+                error: '❌', 
+                warning: '⚠️',
+                info: 'ℹ️'
             };
             
             const icon = icons[type] || icons.info;

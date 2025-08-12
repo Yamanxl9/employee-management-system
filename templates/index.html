@@ -724,6 +724,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // متغيرات عامة
+        let isDetailedView = false;
+        
         // فحص فوري للمصادقة
         (function() {
             const token = localStorage.getItem('authToken');
@@ -1322,7 +1325,7 @@
         }
 
         // متغيرات العرض
-        let isDetailedView = true; // العرض التفصيلي افتراضياً
+        isDetailedView = true; // العرض التفصيلي افتراضياً
         
         // تبديل طريقة العرض
         function toggleViewMode() {

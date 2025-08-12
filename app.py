@@ -21,6 +21,22 @@ app.config['MONGO_URI'] = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/em
 # إعداد MongoDB
 mongo = PyMongo(app)
 
+# دالة لتسجيل الأنشطة في Audit Log
+def log_activity(action, details, user_id=None):
+    """تسجيل نشاط في سجل التدقيق"""
+    try:
+        audit_log = {
+            'timestamp': datetime.now(),
+            'action': action,
+            'details': details,
+            'user_id': user_id or session.get('user_id', 'مجهول'),
+            'ip_address': request.remote_addr,
+            'user_agent': request.headers.get('User-Agent', '')
+        }
+        mongo.db.audit_logs.insert_one(audit_log)
+    except Exception as e:
+        print(f"Error logging activity: {e}")
+
 # Helper functions for MongoDB
 def serialize_doc(doc):
     """تحويل وثيقة MongoDB إلى قاموس قابل للتسلسل"""
@@ -127,6 +143,11 @@ def index():
     # السماح بالوصول للصفحة الرئيسية، والتحقق من المصادقة سيتم في JavaScript
     return render_template('index.html')
 
+# صفحة سجل التدقيق
+@app.route('/audit-logs')
+def audit_logs_page():
+    return render_template('audit_logs.html')
+
 # صفحة تسجيل الدخول
 @app.route('/login')
 def login_page():
@@ -151,6 +172,9 @@ def login():
         
         # توليد JWT token
         token = generate_token(user['_id'])
+        
+        # تسجيل النشاط
+        log_activity('تسجيل دخول', f'تسجيل دخول ناجح للمستخدم: {username}', str(user['_id']))
         
         # إعداد بيانات المستخدم للإرجاع (بدون كلمة المرور)
         user_data = {
@@ -346,6 +370,9 @@ def add_employee():
         # إدراج الموظف في MongoDB
         result = mongo.db.employees.insert_one(data)
         
+        # تسجيل النشاط
+        log_activity('إضافة موظف', f'تم إضافة الموظف {data.get("staff_name_ara", "")} - رقم الموظف: {data.get("staff_no", "")}')
+        
         # جلب الموظف المضاف مع التفاصيل الكاملة
         employee = mongo.db.employees.find_one({'_id': result.inserted_id})
         emp_dict = serialize_doc(employee)
@@ -392,6 +419,9 @@ def update_employee(staff_no):
         if result.matched_count == 0:
             return jsonify({'error': 'الموظف غير موجود'}), 404
         
+        # تسجيل النشاط
+        log_activity('تعديل موظف', f'تم تعديل بيانات الموظف رقم: {staff_no}')
+        
         # جلب الموظف المحدث - البحث بـ string أولاً
         employee = mongo.db.employees.find_one({'staff_no': staff_no})
         if not employee:
@@ -417,6 +447,15 @@ def update_employee(staff_no):
 @require_auth
 def delete_employee(staff_no):
     try:
+        # جلب بيانات الموظف أولاً للتسجيل
+        employee = mongo.db.employees.find_one({'staff_no': staff_no})
+        if not employee:
+            try:
+                staff_no_int = int(staff_no)
+                employee = mongo.db.employees.find_one({'staff_no': staff_no_int})
+            except ValueError:
+                pass
+        
         # البحث بـ string أولاً (النوع الصحيح في MongoDB)
         result = mongo.db.employees.delete_one({'staff_no': staff_no})
         
@@ -430,6 +469,10 @@ def delete_employee(staff_no):
         
         if result.deleted_count == 0:
             return jsonify({'error': 'الموظف غير موجود'}), 404
+        
+        # تسجيل النشاط
+        employee_name = employee.get('staff_name_ara', employee.get('staff_name', '')) if employee else ''
+        log_activity('حذف موظف', f'تم حذف الموظف {employee_name} - رقم الموظف: {staff_no}')
         
         return jsonify({'message': 'تم حذف الموظف بنجاح'})
         
@@ -904,6 +947,72 @@ def export_filtered_results():
             as_attachment=True,
             download_name=filename
         )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# API لجلب سجل التدقيق
+@app.route('/api/audit-logs')
+@require_auth
+def get_audit_logs():
+    """جلب سجل التدقيق مع الترقيم"""
+    try:
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 20))
+        action_filter = request.args.get('action', '')
+        
+        # بناء الاستعلام
+        filter_query = {}
+        if action_filter:
+            filter_query['action'] = {'$regex': action_filter, '$options': 'i'}
+        
+        # حساب إجمالي السجلات
+        total = mongo.db.audit_logs.count_documents(filter_query)
+        
+        # جلب البيانات مع الترقيم
+        logs = list(mongo.db.audit_logs.find(filter_query)
+                   .sort('timestamp', -1)
+                   .skip((page - 1) * per_page)
+                   .limit(per_page))
+        
+        # تنسيق البيانات
+        formatted_logs = []
+        for log in logs:
+            formatted_logs.append({
+                'timestamp': log.get('timestamp').strftime('%Y-%m-%d %H:%M:%S') if log.get('timestamp') else '',
+                'action': log.get('action', ''),
+                'details': log.get('details', ''),
+                'user_id': log.get('user_id', 'مجهول'),
+                'ip_address': log.get('ip_address', '')
+            })
+        
+        return jsonify({
+            'logs': formatted_logs,
+            'total': total,
+            'page': page,
+            'per_page': per_page,
+            'pages': (total + per_page - 1) // per_page
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# API لحذف سجلات التدقيق القديمة
+@app.route('/api/audit-logs/cleanup', methods=['POST'])
+@require_auth
+def cleanup_audit_logs():
+    """حذف سجلات التدقيق الأقدم من 90 يوم"""
+    try:
+        cutoff_date = datetime.now() - timedelta(days=90)
+        result = mongo.db.audit_logs.delete_many({'timestamp': {'$lt': cutoff_date}})
+        
+        log_activity('تنظيف سجل التدقيق', f'تم حذف {result.deleted_count} سجل قديم')
+        
+        return jsonify({
+            'success': True,
+            'deleted_count': result.deleted_count,
+            'message': f'تم حذف {result.deleted_count} سجل قديم'
+        })
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

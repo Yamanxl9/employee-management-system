@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlElement">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="pageTitle">سجل التدقيق - مجموعة شركات العقيلي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+        
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar {
+            height: 100vh;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px;
+            position: fixed;
+            width: 250px;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .sidebar .logo {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .sidebar .logo h4 {
+            color: #fff;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .sidebar .nav-item {
+            margin-bottom: 10px;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255,255,255,0.8);
+            padding: 15px 20px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            transform: translateX(-5px);
+        }
+        
+        .sidebar .nav-link i {
+            margin-left: 10px;
+            width: 20px;
+        }
+        
+        .main-content {
+            margin-right: 250px;
+            padding: 20px;
+        }
+        
+        .content-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .page-header {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .filter-section {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .audit-log-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .audit-log-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .log-timestamp {
+            color: #6c757d;
+            font-size: 0.9em;
+            float: left;
+        }
+        
+        .log-action {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        
+        .log-details {
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .log-user {
+            font-size: 0.85em;
+            color: #007bff;
+        }
+        
+        .log-ip {
+            font-size: 0.8em;
+            color: #adb5bd;
+            float: left;
+        }
+        
+        .action-add {
+            border-right: 4px solid #28a745;
+        }
+        
+        .action-edit {
+            border-right: 4px solid #ffc107;
+        }
+        
+        .action-delete {
+            border-right: 4px solid #dc3545;
+        }
+        
+        .action-login {
+            border-right: 4px solid #17a2b8;
+        }
+        
+        .action-other {
+            border-right: 4px solid #6c757d;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-cleanup {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-cleanup:hover {
+            background: linear-gradient(45deg, #c0392b, #a93226);
+            transform: translateY(-1px);
+            color: white;
+        }
+        
+        .pagination {
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .pagination .page-link {
+            border-radius: 8px;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .pagination .page-link:hover {
+            background-color: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-building fa-2x mb-2"></i>
+            <h4>مجموعة شركات العقيلي</h4>
+        </div>
+        
+        <nav>
+            <div class="nav-item">
+                <a href="/" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    <span id="navHome">الصفحة الرئيسية</span>
+                </a>
+            </div>
+            <div class="nav-item">
+                <a href="/audit-logs" class="nav-link active">
+                    <i class="fas fa-history"></i>
+                    <span id="navAudit">سجل التدقيق</span>
+                </a>
+            </div>
+        </nav>
+        
+        <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
+            <button class="btn btn-outline-light w-100" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                <span id="logoutText">تسجيل الخروج</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="content-container">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h2 id="pageHeaderTitle">
+                    <i class="fas fa-history"></i>
+                    سجل التدقيق والأنشطة
+                </h2>
+                <p id="pageHeaderDesc">سجل جميع العمليات والأنشطة المنفذة في النظام</p>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold" id="filterActionLabel">فلترة حسب النشاط:</label>
+                        <select class="form-select" id="actionFilter">
+                            <option value="">جميع الأنشطة</option>
+                            <option value="إضافة">إضافة موظف</option>
+                            <option value="تعديل">تعديل موظف</option>
+                            <option value="حذف">حذف موظف</option>
+                            <option value="تسجيل">تسجيل دخول</option>
+                            <option value="تنظيف">تنظيف السجل</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <button class="btn btn-primary me-2" onclick="searchLogs()">
+                            <i class="fas fa-search"></i>
+                            <span id="searchBtn">بحث</span>
+                        </button>
+                        <button class="btn btn-cleanup" onclick="cleanupLogs()">
+                            <i class="fas fa-trash-alt"></i>
+                            <span id="cleanupBtn">تنظيف السجلات القديمة</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading" style="display: none;">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden" id="loadingText">جاري التحميل...</span>
+                </div>
+                <div class="mt-3" id="loadingDesc">جاري جلب سجل التدقيق...</div>
+            </div>
+            
+            <!-- Audit Logs Container -->
+            <div id="auditLogsContainer">
+                <!-- سيتم ملئه ديناميكياً -->
+            </div>
+            
+            <!-- Pagination -->
+            <nav aria-label="pagination">
+                <ul class="pagination" id="pagination">
+                    <!-- سيتم ملئه ديناميكياً -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    
+    <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        
+        // التحقق من المصادقة عند تحميل الصفحة
+        window.onload = function() {
+            if (!checkAuth()) {
+                window.location.href = '/login';
+                return;
+            }
+            loadAuditLogs();
+        };
+        
+        function checkAuth() {
+            const token = localStorage.getItem('auth_token');
+            return token !== null;
+        }
+        
+        function logout() {
+            localStorage.removeItem('auth_token');
+            showToast('تم تسجيل الخروج بنجاح', 'success');
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1000);
+        }
+        
+        function showToast(message, type = 'info') {
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            const colors = {
+                success: 'linear-gradient(to right, #00b09b, #96c93d)',
+                error: 'linear-gradient(to right, #ff5f6d, #ffc371)',
+                warning: 'linear-gradient(to right, #f093fb 0%, #f5576c 100%)',
+                info: 'linear-gradient(to right, #667eea 0%, #764ba2 100%)'
+            };
+            
+            Toastify({
+                text: `${icons[type]} ${message}`,
+                duration: 3000,
+                close: true,
+                gravity: "top",
+                position: "right",
+                background: colors[type],
+                stopOnFocus: true,
+                style: {
+                    borderRadius: "10px",
+                    fontFamily: "'Tajawal', sans-serif",
+                    fontSize: "14px"
+                }
+            }).showToast();
+        }
+        
+        async function loadAuditLogs(page = 1) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const container = document.getElementById('auditLogsContainer');
+            
+            loadingIndicator.style.display = 'block';
+            container.innerHTML = '';
+            
+            try {
+                const actionFilter = document.getElementById('actionFilter').value;
+                const token = localStorage.getItem('auth_token');
+                
+                const response = await fetch(`/api/audit-logs?page=${page}&per_page=10&action=${actionFilter}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('auth_token');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                displayAuditLogs(data.logs);
+                updatePagination(data.page, data.pages, data.total);
+                currentPage = data.page;
+                totalPages = data.pages;
+                
+            } catch (error) {
+                showToast('خطأ في تحميل سجل التدقيق: ' + error.message, 'error');
+                container.innerHTML = '<div class="alert alert-danger">خطأ في تحميل البيانات</div>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+        
+        function displayAuditLogs(logs) {
+            const container = document.getElementById('auditLogsContainer');
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<div class="alert alert-info text-center">لا توجد سجلات للعرض</div>';
+                return;
+            }
+            
+            let html = '';
+            logs.forEach(log => {
+                const actionClass = getActionClass(log.action);
+                html += `
+                    <div class="audit-log-item ${actionClass}">
+                        <div class="log-timestamp">${log.timestamp}</div>
+                        <div class="log-action">${log.action}</div>
+                        <div class="log-details">${log.details}</div>
+                        <div class="d-flex justify-content-between">
+                            <div class="log-user">المستخدم: ${log.user_id}</div>
+                            <div class="log-ip">IP: ${log.ip_address}</div>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function getActionClass(action) {
+            if (action.includes('إضافة')) return 'action-add';
+            if (action.includes('تعديل')) return 'action-edit';
+            if (action.includes('حذف')) return 'action-delete';
+            if (action.includes('تسجيل')) return 'action-login';
+            return 'action-other';
+        }
+        
+        function updatePagination(currentPage, totalPages, totalItems) {
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                html += `<li class="page-item">
+                    <a class="page-link" href="#" onclick="loadAuditLogs(${currentPage - 1})">السابق</a>
+                </li>`;
+            }
+            
+            // Page numbers
+            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadAuditLogs(${i})">${i}</a>
+                </li>`;
+            }
+            
+            // Next button
+            if (currentPage < totalPages) {
+                html += `<li class="page-item">
+                    <a class="page-link" href="#" onclick="loadAuditLogs(${currentPage + 1})">التالي</a>
+                </li>`;
+            }
+            
+            pagination.innerHTML = html;
+        }
+        
+        function searchLogs() {
+            loadAuditLogs(1);
+        }
+        
+        async function cleanupLogs() {
+            if (!confirm('هل أنت متأكد من حذف السجلات الأقدم من 90 يوم؟')) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('auth_token');
+                
+                const response = await fetch('/api/audit-logs/cleanup', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                showToast(data.message, 'success');
+                loadAuditLogs(1);
+                
+            } catch (error) {
+                showToast('خطأ في تنظيف السجلات: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

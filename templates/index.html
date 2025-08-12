@@ -309,6 +309,72 @@
             background: linear-gradient(135deg, #dc3545, #fd7e14) !important;
         }
         
+        /* تحسينات للتعريب وتثبيت مواضع الأزرار */
+        .btn {
+            min-width: 120px !important;
+            white-space: nowrap !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+        }
+        
+        .btn-lg {
+            min-width: 140px !important;
+        }
+        
+        /* تثبيت مواضع الأزرار في الهيدر */
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            min-width: 300px;
+            justify-content: flex-end;
+        }
+        
+        /* تحسينات للاتجاه RTL/LTR */
+        [dir="rtl"] .d-flex {
+            flex-direction: row-reverse;
+        }
+        
+        [dir="rtl"] .me-2 {
+            margin-right: 0 !important;
+            margin-left: 0.5rem !important;
+        }
+        
+        [dir="rtl"] .ms-2 {
+            margin-left: 0 !important;
+            margin-right: 0.5rem !important;
+        }
+        
+        [dir="rtl"] .justify-content-end {
+            justify-content: flex-start !important;
+        }
+        
+        [dir="rtl"] .justify-content-start {
+            justify-content: flex-end !important;
+        }
+        
+        /* تثبيت مواضع أزرار العمليات */
+        .action-buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            min-height: 60px;
+        }
+        
+        /* منع انتقال العناصر أثناء تغيير اللغة */
+        .search-section .d-flex {
+            min-height: 60px;
+            align-items: center;
+        }
+        
+        .search-section .btn {
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
         .toastify.warning {
             background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
         }
@@ -377,14 +443,16 @@
         <div class="main-container">
             <!-- العنوان الرئيسي -->
             <div class="header-section">
-                <button class="btn language-toggle" onclick="toggleLanguage()">
-                    <i class="fas fa-language me-2"></i>
-                    <span id="languageBtn">English</span>
-                </button>
-                <button class="btn logout-btn" onclick="logout()" title="تسجيل الخروج">
-                    <i class="fas fa-sign-out-alt me-2"></i>
-                    <span id="logoutBtn">تسجيل خروج</span>
-                </button>
+                <div class="header-actions">
+                    <button class="btn language-toggle" onclick="toggleLanguage()">
+                        <i class="fas fa-language me-2"></i>
+                        <span id="languageBtn">English</span>
+                    </button>
+                    <button class="btn logout-btn" onclick="logout()" title="تسجيل الخروج">
+                        <i class="fas fa-sign-out-alt me-2"></i>
+                        <span id="logoutBtn">تسجيل خروج</span>
+                    </button>
+                </div>
                 <h1 class="mb-3">
                     <i class="fas fa-users me-3"></i>
                     <span id="mainTitle">مجموعة شركات العقيلي</span>
@@ -874,6 +942,13 @@
 
         // تحميل البيانات عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', function() {
+            // تحميل اللغة المحفوظة
+            const savedLanguage = localStorage.getItem('selectedLanguage');
+            if (savedLanguage && (savedLanguage === 'ar' || savedLanguage === 'en')) {
+                currentLanguage = savedLanguage;
+            }
+            updateLanguage(); // تطبيق اللغة المحفوظة
+            
             // اختبار الاتصال بالخادم أولاً
             testConnection();
             
@@ -928,6 +1003,7 @@
         // تبديل اللغة
         function toggleLanguage() {
             currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
+            localStorage.setItem('selectedLanguage', currentLanguage); // حفظ اللغة
             updateLanguage();
         }
 
@@ -941,29 +1017,56 @@
             document.getElementById('htmlElement').setAttribute('dir', isEnglish ? 'ltr' : 'rtl');
             document.body.className = isEnglish ? 'english' : '';
             
-            // تحديث النصوص
+            // تحديث النصوص الأساسية
             document.getElementById('pageTitle').textContent = t.pageTitle;
             document.getElementById('languageBtn').textContent = t.languageBtn;
             document.getElementById('logoutBtn').textContent = t.logoutBtn;
             document.getElementById('mainTitle').textContent = t.mainTitle;
             document.getElementById('subTitle').textContent = t.subTitle;
+            
+            // تحديث الإحصائيات
             document.getElementById('totalEmployeesText').textContent = t.totalEmployeesText;
             document.getElementById('passportMissingText').textContent = t.passportMissingText;
             document.getElementById('cardsMissingText').textContent = t.cardsMissingText;
             document.getElementById('cardsExpiredText').textContent = t.cardsExpiredText;
+            
+            // تحديث قسم البحث والفلاتر
             document.getElementById('searchTitle').textContent = t.searchTitle;
             document.getElementById('addEmployeeBtn').textContent = t.addEmployeeBtn;
             document.getElementById('searchLabel').textContent = t.searchLabel;
             document.getElementById('nationalityLabel').textContent = t.nationalityLabel;
             document.getElementById('companyLabel').textContent = t.companyLabel;
+            
+            // تحديث تسمية فلتر الوظائف
+            const jobLabel = document.getElementById('jobLabel');
+            if (jobLabel) {
+                jobLabel.textContent = t.jobLabel;
+            }
+            
             document.getElementById('passportStatusLabel').textContent = t.passportStatusLabel;
             document.getElementById('cardStatusLabel').textContent = t.cardStatusLabel;
-            document.getElementById('searchBtn').textContent = t.searchBtn;
             document.getElementById('clearBtn').textContent = t.clearBtn;
             
-            // تحديث الخيارات
+            // تحديث أزرار العرض والتصدير
+            const viewModeBtn = document.getElementById('viewModeBtn');
+            if (viewModeBtn) {
+                document.getElementById('viewModeText').textContent = t.viewModeText;
+            }
+            const exportBtn = document.getElementById('exportBtn');
+            if (exportBtn) {
+                exportBtn.textContent = t.exportBtn;
+            }
+            
+            // تحديث خيارات الفلاتر
             document.getElementById('allNationalitiesOption').textContent = t.allNationalitiesOption;
             document.getElementById('allCompaniesOption').textContent = t.allCompaniesOption;
+            
+            // تحديث خيارات الوظائف
+            const allJobsOption = document.getElementById('allJobsOption');
+            if (allJobsOption) {
+                allJobsOption.textContent = t.allJobsOption;
+            }
+            
             document.getElementById('allPassportStatusOption').textContent = t.allPassportStatusOption;
             document.getElementById('passportAvailableOption').textContent = t.passportAvailableOption;
             document.getElementById('passportMissingOption').textContent = t.passportMissingOption;

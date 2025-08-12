@@ -1,0 +1,97 @@
+[
+  {
+    "Job_Code": 1,
+    "Job_Eng": "Accountant",
+    "Job_Ara": "محاسب"
+  },
+  {
+    "Job_Code": 2,
+    "Job_Eng": "Archive Clerk",
+    "Job_Ara": "كاتب الأرشیف"
+  },
+  {
+    "Job_Code": 3,
+    "Job_Eng": "Commercial Sales Representative",
+    "Job_Ara": "ممثل مبيعات تجاري"
+  },
+  {
+    "Job_Code": 4,
+    "Job_Eng": "Computer Engineer",
+    "Job_Ara": "مھندس كومبیوتر"
+  },
+  {
+    "Job_Code": 5,
+    "Job_Eng": "Filing Clerk",
+    "Job_Ara": "كاتب ملفات"
+  },
+  {
+    "Job_Code": 6,
+    "Job_Eng": "Marketing Manager",
+    "Job_Ara": "مدير التسويق"
+  },
+  {
+    "Job_Code": 7,
+    "Job_Eng": "Messenger",
+    "Job_Ara": "مراسل"
+  },
+  {
+    "Job_Code": 8,
+    "Job_Eng": "Operations Manager",
+    "Job_Ara": "مدير عمليات"
+  },
+  {
+    "Job_Code": 9,
+    "Job_Eng": "Sales Manager",
+    "Job_Ara": "مدیر المبیعات"
+  },
+  {
+    "Job_Code": 10,
+    "Job_Eng": "Shop Assistant",
+    "Job_Ara": "عامل مساعد بمتجر"
+  },
+  {
+    "Job_Code": 11,
+    "Job_Eng": "Stall and Market Salesperson",
+    "Job_Ara": "مندوب مبيعات الأكشاك والسوق"
+  },
+  {
+    "Job_Code": 12,
+    "Job_Eng": "Stevedore",
+    "Job_Ara": "محمل سفن"
+  },
+  {
+    "Job_Code": 13,
+    "Job_Eng": "Legal Consultant",
+    "Job_Ara": "استشاري قانوني"
+  },
+  {
+    "Job_Code": 14,
+    "Job_Eng": "Finance Director",
+    "Job_Ara": "مدیر المالیة"
+  },
+  {
+    "Job_Code": 15,
+    "Job_Eng": "Administration Manager",
+    "Job_Ara": "مدير ادارة"
+  },
+  {
+    "Job_Code": 16,
+    "Job_Eng": "Loading and unloading worker",
+    "Job_Ara": "عامل الشحن والتفريغ"
+  },
+  {
+    "Job_Code": 17,
+    "Job_Eng": "Marketing Specialist",
+    "Job_Ara": "أخصائي تسويق"
+  },
+  {
+    "Job_Code": 18,
+    "Job_Eng": "Storekeeper",
+    "Job_Ara": "أمين مخزن"
+  },
+  {
+    "Job_Code": 19,
+    "Job_Eng": "General Manager",
+    "Job_Ara": "مدير عام"
+  }
+]

@@ -6,6 +6,8 @@
     <title id="pageTitle">مجموعة شركات العقيلي - Al-Aqeeli Group</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
         
@@ -265,6 +267,45 @@
         .english {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             direction: ltr;
+        }
+        
+        /* Toast Notifications Styles */
+        .toastify {
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+            border-radius: 12px !important;
+            padding: 16px 20px !important;
+            color: white !important;
+            font-family: 'Tajawal', sans-serif !important;
+            font-weight: 500 !important;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
+            border: none !important;
+            font-size: 14px !important;
+        }
+        
+        .toastify.success {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+        }
+        
+        .toastify.error {
+            background: linear-gradient(135deg, #dc3545, #fd7e14) !important;
+        }
+        
+        .toastify.warning {
+            background: linear-gradient(135deg, #ffc107, #fd7e14) !important;
+        }
+        
+        .toastify.info {
+            background: linear-gradient(135deg, #17a2b8, #6f42c1) !important;
+        }
+        
+        .toast-icon {
+            margin-left: 8px;
+            font-size: 16px;
+        }
+        
+        .english .toast-icon {
+            margin-left: 0;
+            margin-right: 8px;
         }
         
         .english .language-toggle {
@@ -841,9 +882,12 @@
                 }
             } catch (error) {
                 console.error('❌ Server connection failed:', error);
-                alert(currentLanguage === 'ar' ? 
-                    'تعذر الاتصال بالخادم. تأكد من أن الخادم يعمل على المنفذ 5000' : 
-                    'Cannot connect to server. Make sure server is running on port 5000');
+                showNotification(
+                    currentLanguage === 'ar' ? 
+                        'تعذر الاتصال بالخادم. تأكد من أن الخادم يعمل على المنفذ 5000 🔌' : 
+                        'Cannot connect to server. Make sure server is running on port 5000 🔌',
+                    'error'
+                );
             }
         }
 
@@ -1407,7 +1451,12 @@
                 new bootstrap.Modal(document.getElementById('employeeModal')).show();
                 
             } catch (error) {
-                alert(currentLanguage === 'ar' ? 'خطأ في تحميل بيانات الموظف: ' + error.message : 'Error loading employee data: ' + error.message);
+                showNotification(
+                    currentLanguage === 'ar' ? 
+                        'خطأ في تحميل بيانات الموظف: ' + error.message + ' ⚠️' : 
+                        'Error loading employee data: ' + error.message + ' ⚠️',
+                    'error'
+                );
                 console.error('Error:', error);
             }
         }
@@ -1458,13 +1507,22 @@
                     bootstrap.Modal.getInstance(document.getElementById('employeeModal')).hide();
                     await loadStatistics();
                     await searchEmployees();
-                    alert(currentLanguage === 'ar' ? 'تم حفظ البيانات بنجاح' : 'Data saved successfully');
+                    showNotification(
+                        currentLanguage === 'ar' ? 'تم حفظ البيانات بنجاح! 🎉' : 'Data saved successfully! 🎉',
+                        'success'
+                    );
                 } else {
                     const error = await response.json();
-                    alert(error.error || (currentLanguage === 'ar' ? 'خطأ في حفظ البيانات' : 'Error saving data'));
+                    showNotification(
+                        error.error || (currentLanguage === 'ar' ? 'خطأ في حفظ البيانات' : 'Error saving data'),
+                        'error'
+                    );
                 }
             } catch (error) {
-                alert(currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error');
+                showNotification(
+                    currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error',
+                    'error'
+                );
                 console.error('Error:', error);
             }
         }
@@ -1493,13 +1551,22 @@
                     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
                     await loadStatistics();
                     await searchEmployees();
-                    alert(currentLanguage === 'ar' ? 'تم حذف الموظف بنجاح' : 'Employee deleted successfully');
+                    showNotification(
+                        currentLanguage === 'ar' ? 'تم حذف الموظف بنجاح 🗑️' : 'Employee deleted successfully 🗑️',
+                        'success'
+                    );
                 } else {
                     const error = await response.json();
-                    alert(error.error || (currentLanguage === 'ar' ? 'خطأ في حذف الموظف' : 'Error deleting employee'));
+                    showNotification(
+                        error.error || (currentLanguage === 'ar' ? 'خطأ في حذف الموظف' : 'Error deleting employee'),
+                        'error'
+                    );
                 }
             } catch (error) {
-                alert(currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error');
+                showNotification(
+                    currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error',
+                    'error'
+                );
                 console.error('Error:', error);
             }
         }
@@ -1534,7 +1601,10 @@
                 const data = await response.json();
 
                 if (data.employees.length === 0) {
-                    alert(currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير' : 'No results to export');
+                    showNotification(
+                        currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير 📄' : 'No results to export 📄',
+                        'warning'
+                    );
                     return;
                 }
 
@@ -1574,13 +1644,22 @@
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
                     
-                    alert(currentLanguage === 'ar' ? 'تم تصدير التقرير بنجاح' : 'Report exported successfully');
+                    showNotification(
+                        currentLanguage === 'ar' ? 'تم تصدير التقرير بنجاح 📊' : 'Report exported successfully 📊',
+                        'success'
+                    );
                 } else {
                     const error = await exportResponse.json();
-                    alert(error.error || (currentLanguage === 'ar' ? 'خطأ في تصدير التقرير' : 'Error exporting report'));
+                    showNotification(
+                        error.error || (currentLanguage === 'ar' ? 'خطأ في تصدير التقرير' : 'Error exporting report'),
+                        'error'
+                    );
                 }
             } catch (error) {
-                alert(currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error');
+                showNotification(
+                    currentLanguage === 'ar' ? 'خطأ في الاتصال بالخادم' : 'Server connection error',
+                    'error'
+                );
                 console.error('Error:', error);
             }
         }
@@ -1596,6 +1675,37 @@
             currentPage = 1;
             loadEmployees();
         }
+        
+        // دالة عرض الإشعارات المحسنة
+        function showNotification(message, type = 'info', duration = 3000) {
+            const icons = {
+                success: '✅',
+                error: '❌', 
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            const icon = icons[type] || icons.info;
+            const isArabic = currentLanguage === 'ar';
+            
+            Toastify({
+                text: `${icon} ${message}`,
+                duration: duration,
+                close: true,
+                gravity: "top",
+                position: isArabic ? "right" : "left",
+                stopOnFocus: true,
+                className: type,
+                style: {
+                    fontFamily: isArabic ? "'Tajawal', sans-serif" : "'Segoe UI', sans-serif",
+                    direction: isArabic ? 'rtl' : 'ltr',
+                    textAlign: isArabic ? 'right' : 'left'
+                }
+            }).showToast();
+        }
     </script>
+    
+    <!-- Toastify JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 </body>
 </html>

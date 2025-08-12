@@ -852,12 +852,27 @@
             // اختبار الاتصال بالخادم أولاً
             testConnection();
             
+            // تحميل البيانات الأساسية
             loadStatistics();
             loadFilters();
-            loadEmployees(); // تحميل الموظفين تلقائياً
+            
+            // تحميل الموظفين مع تأخير للتأكد من جاهزية النظام
+            setTimeout(() => {
+                showAllEmployees(); // إظهار جميع الموظفين تلقائياً
+                console.log('📋 Loading all employees automatically...');
+            }, 500);
             
             // إعداد Event Listeners
             setupEventListeners();
+            
+            // استدعاء احتياطي للتأكد من تحميل البيانات
+            setTimeout(() => {
+                const employeeTableBody = document.querySelector('#employeeTableBody');
+                if (employeeTableBody && employeeTableBody.children.length === 0) {
+                    console.log('🔄 Backup loading attempt...');
+                    showAllEmployees();
+                }
+            }, 2000);
             
             console.log('✅ App initialized successfully!');
         }
@@ -995,7 +1010,6 @@
                 confirmDeleteBtn: 'Delete'
             }
         };
-            loadEmployees(); // تحميل الموظفين تلقائياً
             
         // إعداد event listeners
         function setupEventListeners() {
@@ -2015,6 +2029,22 @@
                 }
             }).showToast();
         }
+
+        // ضمان تحميل البيانات عند اكتمال تحميل الصفحة
+        window.onload = function() {
+            console.log('🔄 Window fully loaded - checking data...');
+            setTimeout(() => {
+                const employeeTableBody = document.querySelector('#employeeTableBody');
+                const token = localStorage.getItem('authToken');
+                
+                if (token && token !== 'null' && token !== 'undefined' && token !== '') {
+                    if (!employeeTableBody || employeeTableBody.children.length === 0) {
+                        console.log('📋 Final attempt to load all employees...');
+                        showAllEmployees();
+                    }
+                }
+            }, 1000);
+        };
     </script>
     
     <!-- Toastify JS -->

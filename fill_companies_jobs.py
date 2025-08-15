@@ -27,21 +27,18 @@ for company in companies_data:
         "company_name_ara": company["CompanyName_ara"]
     })
 
-# بيانات الوظائف التجريبية
-jobs = [
-    {"job_code": 1, "job_eng": "Accountant", "job_ara": "محاسب"},
-    {"job_code": 2, "job_eng": "Sales Representative", "job_ara": "مندوب مبيعات"},
-    {"job_code": 3, "job_eng": "Store Keeper", "job_ara": "أمين مخزن"},
-    {"job_code": 4, "job_eng": "Manager", "job_ara": "مدير"},
-    {"job_code": 5, "job_eng": "Assistant", "job_ara": "مساعد"},
-    {"job_code": 6, "job_eng": "Supervisor", "job_ara": "مشرف"},
-    {"job_code": 7, "job_eng": "Driver", "job_ara": "سائق"},
-    {"job_code": 8, "job_eng": "Cashier", "job_ara": "أمين صندوق"},
-    {"job_code": 9, "job_eng": "Secretary", "job_ara": "سكرتير"},
-    {"job_code": 10, "job_eng": "Technician", "job_ara": "فني"},
-    {"job_code": 11, "job_eng": "Security Guard", "job_ara": "حارس أمن"},
-    {"job_code": 12, "job_eng": "Cleaner", "job_ara": "عامل نظافة"}
-]
+# قراءة بيانات الوظائف من ملف JSON
+with open('jobs_new.json', 'r', encoding='utf-8') as f:
+    jobs_data = json.load(f)
+
+# تحويل البيانات إلى الصيغة المطلوبة  
+jobs = []
+for job in jobs_data:
+    jobs.append({
+        "job_code": job["Job_Code"],
+        "job_eng": job["Job_Eng"],
+        "job_ara": job["Job_Ara"]
+    })
 
 # حذف جميع الشركات القديمة واستبدالها بالجديدة
 print("جاري حذف الشركات القديمة...")
@@ -53,14 +50,13 @@ for company in companies:
     db.companies.insert_one(company)
     print(f"تمت إضافة شركة: {company['company_name_ara']}")
 
-print("جاري إضافة/تحديث الوظائف...")
-# إدخال الوظائف (مع تجنب التكرار)
+print("جاري حذف/تحديث الوظائف...")
+# حذف جميع الوظائف القديمة
+db.jobs.delete_many({})
+
+# إدخال الوظائف الجديدة
 for job in jobs:
-    existing = db.jobs.find_one({"job_code": job["job_code"]})
-    if not existing:
-        db.jobs.insert_one(job)
-        print(f"تمت إضافة وظيفة: {job['job_ara']}")
-    else:
-        print(f"وظيفة موجودة مسبقاً: {job['job_ara']}")
+    db.jobs.insert_one(job)
+    print(f"تمت إضافة وظيفة: {job['job_ara']}")
 
 print("تمت تعبئة بيانات الشركات والوظائف بنجاح.")

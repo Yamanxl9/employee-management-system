@@ -8,6 +8,7 @@ import json
 import jwt
 from functools import wraps
 from dotenv import load_dotenv
+from nationalities import NATIONALITIES
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from nationalities import get_nationality_name, get_all_nationalities
@@ -80,7 +81,11 @@ def get_employee_status(employee):
         if isinstance(expiry_date, str):
             expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
         
-        today = datetime.now()
+        # التأكد من أن expiry_date يحتوي على timezone
+        if expiry_date.tzinfo is None:
+            expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+        
+        today = datetime.now(timezone.utc)
         if expiry_date < today:
             card_status, card_text, card_class = 'expired', 'منتهية الصلاحية', 'danger'
         elif expiry_date < today + timedelta(days=90):
@@ -259,18 +264,85 @@ def search_employees():
     filter_query = {}
     
     if query:
-        filter_query['$or'] = [
+        # البحث الشامل والمتطور في جميع الحقول المهمة
+        search_conditions = [
+            # البحث في أسماء الموظفين
             {'staff_name': {'$regex': query, '$options': 'i'}},
             {'staff_name_ara': {'$regex': query, '$options': 'i'}},
+            # البحث في أرقام الموظفين والوثائق
             {'staff_no': {'$regex': query, '$options': 'i'}},
-            {'pass_no': {'$regex': query, '$options': 'i'}}
+            {'pass_no': {'$regex': query, '$options': 'i'}},
+            {'card_no': {'$regex': query, '$options': 'i'}},
+            # البحث في الجنسية
+            {'nationality_code': {'$regex': query, '$options': 'i'}}
         ]
+        
+        # البحث في أسماء الشركات
+        companies_matching = list(mongo.db.companies.find({
+            '$or': [
+                {'company_name_eng': {'$regex': query, '$options': 'i'}},
+                {'company_name_ara': {'$regex': query, '$options': 'i'}},
+                {'company_code': {'$regex': query, '$options': 'i'}}
+            ]
+        }))
+        
+        # إضافة رموز الشركات المطابقة للبحث
+        if companies_matching:
+            company_codes = [comp['company_code'] for comp in companies_matching]
+            search_conditions.append({'company_code': {'$in': company_codes}})
+        
+        # البحث في أسماء الوظائف
+        jobs_matching = list(mongo.db.jobs.find({
+            '$or': [
+                {'job_eng': {'$regex': query, '$options': 'i'}},
+                {'job_ara': {'$regex': query, '$options': 'i'}}
+            ]
+        }))
+        
+        # إضافة رموز الوظائف المطابقة للبحث
+        if jobs_matching:
+            job_codes = [job['job_code'] for job in jobs_matching]
+            search_conditions.append({'job_code': {'$in': job_codes}})
+        
+        # البحث في أسماء الجنسيات الكاملة (Turkish, تركي، etc.)
+        matching_nationality_codes = []
+        
+        for code, names in NATIONALITIES.items():
+            en_match = query.lower() in names['en'].lower()
+            ar_match = query.lower() in names['ar'].lower()
+            code_match = query.lower() in code.lower()
+            
+            if en_match or ar_match or code_match:
+                matching_nationality_codes.append(code)
+        
+        # إضافة رموز الجنسيات المطابقة للبحث
+        if matching_nationality_codes:
+            search_conditions.append({'nationality_code': {'$in': matching_nationality_codes}})
+        
+        filter_query['$or'] = search_conditions
     
     if nationality:
-        filter_query['nationality_code'] = nationality
+        # البحث الذكي في حقل الجنسية - يدعم الأسماء الكاملة والرموز
+        matching_nationality_codes = []
+        for code, names in NATIONALITIES.items():
+            en_match = nationality.lower() in names['en'].lower()
+            ar_match = nationality.lower() in names['ar'].lower()
+            code_match = nationality.lower() in code.lower()
+            
+            if en_match or ar_match or code_match:
+                matching_nationality_codes.append(code)
+        
+        if matching_nationality_codes:
+            # البحث بالرموز المطابقة
+            filter_query['nationality_code'] = {'$in': matching_nationality_codes}
+        else:
+            # البحث العادي إذا لم توجد مطابقات
+            filter_query['nationality_code'] = {'$regex': nationality, '$options': 'i'}
+    
     
     if company:
-        filter_query['company_code'] = company
+        # تحسين البحث في الشركة لدعم النص الجزئي
+        filter_query['company_code'] = {'$regex': company, '$options': 'i'}
     
     if job:
         try:
@@ -344,14 +416,17 @@ def search_employees():
             emp_dict['job_eng'] = job_info.get('job_eng', '')
             emp_dict['job_ara'] = job_info.get('job_ara', '')
         
-        # إضافة اسم الجنسية الكامل
+        # إضافة اسم الجنسية للعرض (إزالة التكرار)
         nationality_code = emp.get('nationality_code', '')
         if nationality_code:
-            emp_dict['nationality_en'] = get_nationality_name(nationality_code, 'en')
-            emp_dict['nationality_ar'] = get_nationality_name(nationality_code, 'ar')
+            # إذا كان nationality_code هو رمز (مثل TR, IN)
+            if nationality_code in NATIONALITIES:
+                emp_dict['nationality_display'] = NATIONALITIES[nationality_code]['ar']
+            else:
+                # إذا كان nationality_code هو اسم كامل بالفعل (مثل "تركي")
+                emp_dict['nationality_display'] = nationality_code
         else:
-            emp_dict['nationality_en'] = nationality_code
-            emp_dict['nationality_ar'] = nationality_code
+            emp_dict['nationality_display'] = 'غير محدد'
             
         results.append(emp_dict)
     
@@ -589,7 +664,10 @@ def get_statistics():
             expiry_date = emp['card_expiry_date']
             if isinstance(expiry_date, str):
                 expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
-            if expiry_date < datetime.now():
+            # التأكد من أن expiry_date يحتوي على timezone
+            if expiry_date.tzinfo is None:
+                expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+            if expiry_date < datetime.now(timezone.utc):
                 cards_expired += 1
     
     return jsonify({
@@ -747,9 +825,13 @@ def employees_summary():
             if isinstance(expiry_date, str):
                 expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
             
-            if expiry_date < datetime.now():
+            # التأكد من أن expiry_date يحتوي على timezone
+            if expiry_date.tzinfo is None:
+                expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+            
+            if expiry_date < datetime.now(timezone.utc):
                 card_status = '🔴'
-            elif expiry_date < datetime.now() + timedelta(days=90):
+            elif expiry_date < datetime.now(timezone.utc) + timedelta(days=90):
                 card_status = '🟡'
             else:
                 card_status = '🟢'

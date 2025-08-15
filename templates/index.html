@@ -1109,7 +1109,17 @@
             });
             
             // إضافة مستمعات الأحداث للفلاتر
-            document.getElementById('nationalityFilter').addEventListener('change', searchEmployees);
+            
+            // البحث بالجنسية (input field) مع تأخير
+            let nationalityTimeout;
+            document.getElementById('nationalityFilter').addEventListener('input', function() {
+                clearTimeout(nationalityTimeout);
+                nationalityTimeout = setTimeout(() => {
+                    searchEmployees();
+                }, 500); // تأخير 500ms
+            });
+            
+            // باقي الفلاتر (select elements)
             document.getElementById('companyFilter').addEventListener('change', searchEmployees);
             document.getElementById('jobFilter').addEventListener('change', searchEmployees);
             document.getElementById('passportStatusFilter').addEventListener('change', searchEmployees);
@@ -1602,7 +1612,7 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <small class="text-muted">${isArabic ? 'الجنسية:' : 'Nationality:'}</small>
-                                        <p class="mb-1">${isArabic ? (employee.nationality_ar || employee.nationality_code) : (employee.nationality_en || employee.nationality_code)}</p>
+                                        <p class="mb-1">${employee.nationality_display || employee.nationality_ar || employee.nationality_en || employee.nationality_code}</p>
                                     </div>
                                 </div>
                             </div>

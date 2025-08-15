@@ -1,0 +1,67 @@
+[
+  {
+    "Company_code": "BRG",
+    "CompanyName_eng": "Middle East Bridge Trading",
+    "CompanyName_ara": "میدل ایست بریدج للتجارة العامة (ش.ذ.م.م)"
+  },
+  {
+    "Company_code": "HON",
+    "CompanyName_eng": "Honda Resources",
+    "CompanyName_ara": "موارد هوندا"
+  },
+  {
+    "Company_code": "LIV",
+    "CompanyName_eng": "Liverage Trading",
+    "CompanyName_ara": "ليفردج للتجارة"
+  },
+  {
+    "Company_code": "MNT",
+    "CompanyName_eng": "Mınt Art Galery",
+    "CompanyName_ara": "مينت آرت جالاري"
+  },
+  {
+    "Company_code": "SQF",
+    "CompanyName_eng": "SQFT General Store",
+    "CompanyName_ara": "اس كيو اف تي للمخازن العامة"
+  },
+  {
+    "Company_code": "TAM",
+    "CompanyName_eng": "Tamayoz",
+    "CompanyName_ara": "تميز"
+  },
+  {
+    "Company_code": "UNI",
+    "CompanyName_eng": "UNI FOOD GENERAL TRADING LLC",
+    "CompanyName_ara": "يونيفود للتجارة"
+  },
+  {
+    "Company_code": "AVT",
+    "CompanyName_eng": "AVANTGARDE GENERAL TRANSPORT",
+    "CompanyName_ara": "افانت جارد للنقل العام"
+  },
+  {
+    "Company_code": "LIM",
+    "CompanyName_eng": "LIMOUSINE 409 LORRY LEASE",
+    "CompanyName_ara": "ليموزين 409 لتاجير الشاحنات"
+  },
+  {
+    "Company_code": "GUL",
+    "CompanyName_eng": "GULF OASIS GENERAL TRADING L.L.C",
+    "CompanyName_ara": "جلف اويسس للتجارة العامة ش.ذ.م.م"
+  },
+  {
+    "Company_code": "MAQ",
+    "CompanyName_eng": "MAQILIES L.L.C",
+    "CompanyName_ara": "مكيليز ش.ذ.م.م"
+  },
+  {
+    "Company_code": "AVTBRB",
+    "CompanyName_eng": "AVANTGARDE PASSENGERS TRANSPORT BY RENTED BUSES",
+    "CompanyName_ara": "افانت جارد لنقل الركاب بالحافلات المؤجرة"
+  },
+  {
+    "Company_code": "REX",
+    "CompanyName_eng": "REX DUBAI (L.L.C)",
+    "CompanyName_ara": "ركس دبي (ش.ذ.م.م)"
+  }
+]

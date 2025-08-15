@@ -1,8 +1,9 @@
-# سكريبت تعبئة بيانات الشركات والوظائف في MongoDB
+# سكريپت تعبئة بيانات الشركات والوظائف في MongoDB
 # يشترط وجود اتصال بقاعدة البيانات نفسها التي يستخدمها النظام
 
 from pymongo import MongoClient
 import os
+import json
 from dotenv import load_dotenv
 
 # تحميل متغيرات البيئة
@@ -13,17 +14,18 @@ mongodb_uri = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/')
 client = MongoClient(mongodb_uri)
 db = client.get_default_database()  # استخدام قاعدة البيانات الافتراضية من URI
 
-# بيانات الشركات التجريبية
-companies = [
-    {"company_code": "IN", "company_name_eng": "IN Company", "company_name_ara": "شركة IN"},
-    {"company_code": "OUT", "company_name_eng": "OUT Company", "company_name_ara": "شركة OUT"},
-    {"company_code": "SCM", "company_name_eng": "SCM General Stores", "company_name_ara": "اس كيو اف تي للمخازن العامة"},
-    {"company_code": "YONIFOOD", "company_name_eng": "YONIFOOD Trading", "company_name_ara": "يونيفود للتجارة"},
-    {"company_code": "REX", "company_name_eng": "REX DUBAI (L.L.C)", "company_name_ara": "ركس دبي (ش.ذ.م.م)"},
-    {"company_code": "AQEELI", "company_name_eng": "Al-Aqeeli Group", "company_name_ara": "مجموعة شركات العقيلي"},
-    {"company_code": "TRADING", "company_name_eng": "Trading Company", "company_name_ara": "شركة التجارة"},
-    {"company_code": "GENERAL", "company_name_eng": "General Services", "company_name_ara": "الخدمات العامة"}
-]
+# قراءة بيانات الشركات من ملف JSON
+with open('companies_new.json', 'r', encoding='utf-8') as f:
+    companies_data = json.load(f)
+
+# تحويل البيانات إلى الصيغة المطلوبة
+companies = []
+for company in companies_data:
+    companies.append({
+        "company_code": company["Company_code"],
+        "company_name_eng": company["CompanyName_eng"],
+        "company_name_ara": company["CompanyName_ara"]
+    })
 
 # بيانات الوظائف التجريبية
 jobs = [
@@ -41,19 +43,18 @@ jobs = [
     {"job_code": 12, "job_eng": "Cleaner", "job_ara": "عامل نظافة"}
 ]
 
-# حذف البيانات القديمة (معطل لتجنب حذف البيانات الموجودة)
-# db.companies.delete_many({})
-# db.jobs.delete_many({})
+# حذف جميع الشركات القديمة واستبدالها بالجديدة
+print("جاري حذف الشركات القديمة...")
+db.companies.delete_many({})
 
-# إدخال البيانات الجديدة (مع تجنب التكرار)
+print("جاري إضافة الشركات الجديدة...")
+# إدخال الشركات الجديدة
 for company in companies:
-    existing = db.companies.find_one({"company_code": company["company_code"]})
-    if not existing:
-        db.companies.insert_one(company)
-        print(f"تمت إضافة شركة: {company['company_name_ara']}")
-    else:
-        print(f"شركة موجودة مسبقاً: {company['company_name_ara']}")
+    db.companies.insert_one(company)
+    print(f"تمت إضافة شركة: {company['company_name_ara']}")
 
+print("جاري إضافة/تحديث الوظائف...")
+# إدخال الوظائف (مع تجنب التكرار)
 for job in jobs:
     existing = db.jobs.find_one({"job_code": job["job_code"]})
     if not existing:

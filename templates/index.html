@@ -1640,10 +1640,10 @@
                                         ${employee.card_expiry_date ? `<br><small class="text-muted">${isArabic ? 'تنتهي:' : 'Expires:'} ${employee.card_expiry_date}</small>` : ''}
                                     </div>
                                     <div class="action-buttons">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="editEmployee(${employee.staff_no})" title="${isArabic ? 'تعديل' : 'Edit'}">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editEmployee('${employee.staff_no}')" title="${isArabic ? 'تعديل' : 'Edit'}">
                                             <i class="fas fa-edit"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(${employee.staff_no})" title="${isArabic ? 'حذف' : 'Delete'}">
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee('${employee.staff_no}')" title="${isArabic ? 'حذف' : 'Delete'}">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>

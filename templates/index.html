@@ -1313,23 +1313,26 @@
                 // تحميل قائمة الجنسيات
                 const nationalitySelect = document.getElementById('nationalityFilter');
                 const nationalityCodeSelect = document.getElementById('nationalityCode');
+                const isArabic = currentLanguage === 'ar';
                 
                 // تنظيف الخيارات القديمة (عدا الخيار الافتراضي)
-                nationalitySelect.innerHTML = '<option value="">جميع الجنسيات</option>';
+                nationalitySelect.innerHTML = `<option value="">${isArabic ? 'جميع الجنسيات' : 'All Nationalities'}</option>`;
                 if (nationalityCodeSelect) {
-                    nationalityCodeSelect.innerHTML = '<option value="">اختر الجنسية</option>';
+                    nationalityCodeSelect.innerHTML = `<option value="">${isArabic ? 'اختر الجنسية' : 'Select Nationality'}</option>`;
                 }
                 
                 data.nationalities.forEach(nationality => {
+                    const displayName = isArabic ? nationality.name_ar : nationality.name_en;
+                    
                     const option1 = document.createElement('option');
-                    option1.value = nationality;
-                    option1.textContent = nationality;
+                    option1.value = nationality.code;
+                    option1.textContent = displayName;
                     nationalitySelect.appendChild(option1);
                     
                     if (nationalityCodeSelect) {
                         const option2 = document.createElement('option');
-                        option2.value = nationality;
-                        option2.textContent = nationality;
+                        option2.value = nationality.code;
+                        option2.textContent = displayName;
                         nationalityCodeSelect.appendChild(option2);
                     }
                 });
@@ -1619,7 +1622,7 @@
                                     </div>
                                     <div class="col-sm-6">
                                         <small class="text-muted">${isArabic ? 'الجنسية:' : 'Nationality:'}</small>
-                                        <p class="mb-1">${employee.nationality_code}</p>
+                                        <p class="mb-1">${isArabic ? (employee.nationality_ar || employee.nationality_code) : (employee.nationality_en || employee.nationality_code)}</p>
                                     </div>
                                 </div>
                             </div>

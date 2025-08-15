@@ -10,6 +10,7 @@ from functools import wraps
 from dotenv import load_dotenv
 from bson import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+from nationalities import get_nationality_name, get_all_nationalities
 
 import logging
 
@@ -324,7 +325,7 @@ def search_employees():
     employees = list(mongo.db.employees.find(filter_query).skip(skip).limit(per_page))
     total = mongo.db.employees.count_documents(filter_query)
     
-    # إضافة معلومات الشركة والوظيفة
+    # إضافة معلومات الشركة والوظيفة والجنسية
     results = []
     for emp in employees:
         # جلب معلومات الشركة
@@ -342,6 +343,15 @@ def search_employees():
         if job_info:
             emp_dict['job_eng'] = job_info.get('job_eng', '')
             emp_dict['job_ara'] = job_info.get('job_ara', '')
+        
+        # إضافة اسم الجنسية الكامل
+        nationality_code = emp.get('nationality_code', '')
+        if nationality_code:
+            emp_dict['nationality_en'] = get_nationality_name(nationality_code, 'en')
+            emp_dict['nationality_ar'] = get_nationality_name(nationality_code, 'ar')
+        else:
+            emp_dict['nationality_en'] = nationality_code
+            emp_dict['nationality_ar'] = nationality_code
             
         results.append(emp_dict)
     
@@ -596,7 +606,21 @@ def get_statistics():
 @app.route('/api/filters')
 @require_auth
 def get_filters():
-    nationalities = mongo.db.employees.distinct('nationality_code')
+    nationality_codes = mongo.db.employees.distinct('nationality_code')
+    
+    # تحويل أكواد الجنسيات إلى أسماء كاملة
+    nationalities = []
+    for code in nationality_codes:
+        if code:  # تجاهل القيم الفارغة
+            nationalities.append({
+                'code': code,
+                'name_en': get_nationality_name(code, 'en'),
+                'name_ar': get_nationality_name(code, 'ar')
+            })
+    
+    # ترتيب حسب الاسم الإنجليزي
+    nationalities.sort(key=lambda x: x['name_en'])
+    
     companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, '_id': 0}))
     jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, '_id': 0}).sort('job_code', 1))
     

@@ -1,0 +1,301 @@
+/* تحسينات الشريط الجانبي */
+#sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    height: 100vh !important;
+    width: 280px !important;
+    background: #f8f9fa !important;
+    border-left: 1px solid #dee2e6 !important;
+    z-index: 1050 !important;
+    transition: transform 0.3s ease-in-out !important;
+    overflow-y: auto !important;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1) !important;
+}
+
+#sidebar.collapsed {
+    transform: translateX(100%) !important;
+}
+
+/* تحسين مربعات الإحصائيات */
+.stats-card {
+    background: linear-gradient(45deg, #28a745, #20c997) !important;
+    color: white !important;
+    border-radius: 15px !important;
+    padding: 25px !important;
+    margin-bottom: 20px !important;
+    text-align: center !important;
+    transition: all 0.3s ease !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    min-height: 120px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+}
+
+.stats-card h4 {
+    font-size: 2.5rem !important;
+    font-weight: bold !important;
+    margin: 10px 0 !important;
+    color: white !important;
+}
+
+.stats-card i {
+    color: rgba(255,255,255,0.8) !important;
+    margin-bottom: 10px !important;
+}
+
+.stats-card small {
+    color: rgba(255,255,255,0.9) !important;
+    font-weight: 500 !important;
+    font-size: 0.9rem !important;
+}
+
+#statisticsSection {
+    margin-bottom: 30px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.clickable-card {
+    cursor: pointer !important;
+}
+
+/* تحسين محتوى الصفحة الرئيسية */
+#main-content {
+    margin-right: 300px !important;
+    transition: margin-right 0.3s ease-in-out !important;
+    padding: 20px !important;
+}
+
+#main-content.full-width {
+    margin-right: 0 !important;
+}
+
+/* تحسين زر التبديل */
+#sidebarToggle {
+    position: fixed !important;
+    top: 15px !important;
+    right: 15px !important;
+    z-index: 1051 !important;
+    background: #007bff !important;
+    border: none !important;
+    color: white !important;
+    padding: 10px 15px !important;
+    border-radius: 5px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+}
+
+#sidebarToggle:hover {
+    background: #0056b3 !important;
+}
+
+/* تحسين محتوى الشريط الجانبي */
+.sidebar-content {
+    padding: 20px !important;
+    padding-top: 60px !important;
+}
+
+.sidebar-content h4 {
+    color: #343a40 !important;
+    border-bottom: 2px solid #007bff !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 20px !important;
+}
+
+.filter-group {
+    margin-bottom: 20px !important;
+    padding: 15px !important;
+    background: white !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+}
+
+.filter-group label {
+    font-weight: bold !important;
+    color: #495057 !important;
+    margin-bottom: 8px !important;
+    display: block !important;
+}
+
+.filter-group .form-control,
+.filter-group .form-select {
+    border: 1px solid #ced4da !important;
+    border-radius: 5px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+}
+
+.filter-group .form-control:focus,
+.filter-group .form-select:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25) !important;
+}
+
+/* تحسين الأزرار */
+.btn-filter {
+    background: #28a745 !important;
+    border: none !important;
+    color: white !important;
+    padding: 10px 20px !important;
+    border-radius: 5px !important;
+    width: 100% !important;
+    margin-bottom: 10px !important;
+    font-weight: bold !important;
+}
+
+.btn-filter:hover {
+    background: #218838 !important;
+}
+
+.btn-clear {
+    background: #6c757d !important;
+    border: none !important;
+    color: white !important;
+    padding: 8px 15px !important;
+    border-radius: 5px !important;
+    width: 100% !important;
+}
+
+.btn-clear:hover {
+    background: #545b62 !important;
+}
+
+/* تحسين الاستجابة للهواتف المحمولة */
+@media (max-width: 768px) {
+    #sidebar {
+        width: 100% !important;
+        transform: translateX(100%) !important;
+    }
+    
+    #sidebar.show {
+        transform: translateX(0) !important;
+    }
+    
+    #main-content {
+        margin-right: 0 !important;
+    }
+    
+    #sidebarToggle {
+        right: 15px !important;
+        top: 15px !important;
+    }
+}
+
+/* تحسين العناصر المخصصة */
+.custom-input-container {
+    margin-top: 10px !important;
+    padding: 10px !important;
+    background: #f8f9fa !important;
+    border-radius: 5px !important;
+    border: 1px dashed #007bff !important;
+}
+
+.custom-input-container label {
+    color: #007bff !important;
+    font-weight: bold !important;
+    font-size: 14px !important;
+}
+
+.custom-input-container input {
+    border: 2px solid #007bff !important;
+    border-radius: 5px !important;
+}
+
+.custom-input-container input:focus {
+    border-color: #0056b3 !important;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25) !important;
+}
+
+/* تحسين النماذج والحقول */
+.form-label {
+    font-weight: bold !important;
+    color: #495057 !important;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25) !important;
+}
+
+/* تحسين الجداول */
+.table-responsive {
+    border-radius: 8px !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+}
+
+.table th {
+    background: #007bff !important;
+    color: white !important;
+    border: none !important;
+    font-weight: bold !important;
+}
+
+.table td {
+    border-color: #dee2e6 !important;
+    vertical-align: middle !important;
+}
+
+/* تحسين الإشعارات */
+.alert {
+    border-radius: 8px !important;
+    border: none !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1) !important;
+}
+
+/* تحسين الأزرار العامة */
+.btn-primary {
+    background: #007bff !important;
+    border: none !important;
+    border-radius: 5px !important;
+    font-weight: bold !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+.btn-primary:hover {
+    background: #0056b3 !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-success {
+    background: #28a745 !important;
+    border: none !important;
+    border-radius: 5px !important;
+    font-weight: bold !important;
+}
+
+.btn-success:hover {
+    background: #218838 !important;
+}
+
+.btn-warning {
+    background: #ffc107 !important;
+    border: none !important;
+    color: #212529 !important;
+    border-radius: 5px !important;
+    font-weight: bold !important;
+}
+
+.btn-warning:hover {
+    background: #e0a800 !important;
+}
+
+.btn-danger {
+    background: #dc3545 !important;
+    border: none !important;
+    border-radius: 5px !important;
+    font-weight: bold !important;
+}
+
+.btn-danger:hover {
+    background: #c82333 !important;
+}

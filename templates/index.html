@@ -847,6 +847,11 @@
             setTimeout(() => {
                 console.log('🌐 Updating language...');
                 updateLanguage(); // تطبيق اللغة المحفوظة
+                
+                // إضافة استدعاء إضافي للتأكد من تطبيق التغييرات
+                setTimeout(() => {
+                    updateLanguage();
+                }, 200);
             }, 100);
             
             // اختبار الاتصال بالخادم أولاً
@@ -1170,9 +1175,19 @@
                 // تحديث النصوص الأساسية
                 safeUpdateText('pageTitle', t.pageTitle);
                 safeUpdateText('languageBtn', t.languageBtn);
-                safeUpdateText('logoutBtn', t.logoutBtn);
+                safeUpdateText('logoutText', t.logoutBtn);
                 safeUpdateText('mainTitle', t.mainTitle);
                 safeUpdateText('subTitle', t.subTitle);
+                
+                // تحديث عناصر الـ sidebar
+                safeUpdateText('navHome', currentLanguage === 'en' ? 'Home' : 'الصفحة الرئيسية');
+                safeUpdateText('navAudit', currentLanguage === 'en' ? 'Audit Log' : 'سجل التدقيق');
+                
+                // تحديث عنوان الشركة في الـ sidebar
+                const logoTitle = document.querySelector('.sidebar .logo h4');
+                if (logoTitle) {
+                    logoTitle.textContent = currentLanguage === 'en' ? 'Al-Aqeeli Group' : 'مجموعة شركات العقيلي';
+                }
                 
                 // تحديث الإحصائيات
                 safeUpdateText('totalEmployeesText', t.totalEmployeesText);

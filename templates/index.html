@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" id="htmlElement">
+<html lang="en" dir="ltr" id="htmlElement">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">مجموعة شركات العقيلي - Al-Aqeeli Group</title>
+    <title id="pageTitle">Al-Aqeeli Group - Employee Management System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Toastify CSS -->
@@ -448,20 +448,20 @@
     <div class="sidebar">
         <div class="logo">
             <i class="fas fa-building fa-2x mb-2"></i>
-            <h4>مجموعة شركات العقيلي</h4>
+            <h4>Al-Aqeeli Group</h4>
         </div>
         
         <nav>
             <div class="nav-item">
                 <a href="/" class="nav-link active">
                     <i class="fas fa-home"></i>
-                    <span id="navHome">الصفحة الرئيسية</span>
+                    <span id="navHome">Home</span>
                 </a>
             </div>
             <div class="nav-item">
                 <a href="/audit-logs" class="nav-link">
                     <i class="fas fa-history"></i>
-                    <span id="navAudit">سجل التدقيق</span>
+                    <span id="navAudit">Audit Log</span>
                 </a>
             </div>
         </nav>
@@ -469,11 +469,11 @@
         <div style="position: absolute; bottom: 20px; left: 20px; right: 20px;">
             <button class="btn btn-outline-light w-100" onclick="toggleLanguage()" style="margin-bottom: 10px;">
                 <i class="fas fa-language"></i>
-                <span id="languageBtn">English</span>
+                <span id="languageBtn">العربية</span>
             </button>
             <button class="btn btn-outline-light w-100" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i>
-                <span id="logoutText">تسجيل الخروج</span>
+                <span id="logoutText">Logout</span>
             </button>
         </div>
     </div>
@@ -485,9 +485,9 @@
             <div class="header-section">
                 <h1 class="mb-3">
                     <i class="fas fa-building me-3"></i>
-                    <span id="mainTitle">نظام إدارة الموظفين</span>
+                    <span id="mainTitle">Employee Management System</span>
                 </h1>
-                <p class="lead mb-0" id="subTitle">Employee Management System</p>
+                <p class="lead mb-0" id="subTitle">مجموعة شركات العقيلي</p>
             </div>
 
             <!-- قسم الإحصائيات -->
@@ -496,28 +496,28 @@
                     <div class="stats-card clickable-card" onclick="showAllEmployees()">
                         <i class="fas fa-users fa-2x mb-2"></i>
                         <h4 id="totalEmployees">0</h4>
-                        <small id="totalEmployeesText">إجمالي الموظفين</small>
+                        <small id="totalEmployeesText">Total Employees</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #dc3545, #fd7e14);" onclick="filterByPassportStatus('missing')">
                         <i class="fas fa-passport fa-2x mb-2"></i>
                         <h4 id="passportMissing">0</h4>
-                        <small id="passportMissingText">جوازات غير متوفرة</small>
+                        <small id="passportMissingText">Missing Passports</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #ffc107, #fd7e14);" onclick="filterByCardStatus('missing')">
                         <i class="fas fa-id-card fa-2x mb-2"></i>
                         <h4 id="cardsMissing">0</h4>
-                        <small id="cardsMissingText">بطاقات غير متوفرة</small>
+                        <small id="cardsMissingText">Missing Cards</small>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="stats-card clickable-card" style="background: linear-gradient(45deg, #6f42c1, #e83e8c);" onclick="filterByCardStatus('expired')">
                         <i class="fas fa-clock fa-2x mb-2"></i>
                         <h4 id="cardsExpired">0</h4>
-                        <small id="cardsExpiredText">بطاقات منتهية</small>
+                        <small id="cardsExpiredText">Expired Cards</small>
                     </div>
                 </div>
             </div>
@@ -527,64 +527,64 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="fw-bold text-primary">
                         <i class="fas fa-search me-2"></i>
-                        <span id="searchTitle">الفلاتر والتحكم</span>
+                        <span id="searchTitle">Filters & Control</span>
                     </h4>
                     <div class="d-flex gap-2">
                         <button class="btn btn-add btn-lg" onclick="openAddModal()" style="border-radius: 25px;">
                             <i class="fas fa-plus me-2"></i>
-                            <span id="addEmployeeBtn">إضافة موظف جديد</span>
+                            <span id="addEmployeeBtn">Add New Employee</span>
                         </button>
                     </div>
                 </div>
                 
                 <div class="row mb-4">
                     <div class="col-md-12 mb-3">
-                        <label class="form-label fw-bold" id="searchLabel">البحث السريع (الاسم، رقم الموظف، رقم الجواز)</label>
+                        <label class="form-label fw-bold" id="searchLabel">Quick Search (Name, Employee No., Passport No.)</label>
                         <input type="text" class="form-control form-control-lg" id="searchQuery" 
-                               placeholder="ابدأ الكتابة للبحث التلقائي..." 
+                               placeholder="Start typing to search automatically..." 
                                style="border-radius: 25px; border: 2px solid #e9ecef; padding: 12px 20px;">
                     </div>
                 </div>
                 
                 <div class="row">
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold" id="nationalityLabel">الجنسية</label>
+                        <label class="form-label fw-bold" id="nationalityLabel">Nationality</label>
                         <select class="form-select" id="nationalityFilter" style="border-radius: 15px;">
-                            <option value="" id="allNationalitiesOption">جميع الجنسيات</option>
+                            <option value="" id="allNationalitiesOption">All Nationalities</option>
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold" id="companyLabel">الشركة</label>
+                        <label class="form-label fw-bold" id="companyLabel">Company</label>
                         <select class="form-select" id="companyFilter" style="border-radius: 15px;">
-                            <option value="" id="allCompaniesOption">جميع الشركات</option>
+                            <option value="" id="allCompaniesOption">All Companies</option>
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold" id="jobLabel">الوظيفة</label>
+                        <label class="form-label fw-bold" id="jobLabel">Job</label>
                         <select class="form-select" id="jobFilter" style="border-radius: 15px;">
-                            <option value="" id="allJobsOption">جميع الوظائف</option>
+                            <option value="" id="allJobsOption">All Jobs</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold" id="passportStatusLabel">حالة الجواز</label>
+                        <label class="form-label fw-bold" id="passportStatusLabel">Passport Status</label>
                         <select class="form-select" id="passportStatusFilter" style="border-radius: 15px;">
-                            <option value="" id="allPassportStatusOption">جميع الحالات</option>
-                            <option value="available" id="passportAvailableOption">متوفر</option>
-                            <option value="missing" id="passportMissingOption">غير متوفر</option>
+                            <option value="" id="allPassportStatusOption">All Status</option>
+                            <option value="available" id="passportAvailableOption">Available</option>
+                            <option value="missing" id="passportMissingOption">Missing</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold" id="cardStatusLabel">حالة البطاقة</label>
+                        <label class="form-label fw-bold" id="cardStatusLabel">Card Status</label>
                         <select class="form-select" id="cardStatusFilter" style="border-radius: 15px;">
-                            <option value="" id="allCardStatusOption">جميع الحالات</option>
-                            <option value="valid" id="cardValidOption">سارية</option>
-                            <option value="expiring_soon" id="cardExpiringSoonOption">تنتهي قريباً</option>
-                            <option value="expired" id="cardExpiredOption">منتهية</option>
-                            <option value="no_expiry" id="cardNoExpiryOption">بدون تاريخ انتهاء</option>
-                            <option value="missing" id="cardMissingOption">غير متوفرة</option>
+                            <option value="" id="allCardStatusOption">All Status</option>
+                            <option value="valid" id="cardValidOption">Valid</option>
+                            <option value="expiring_soon" id="cardExpiringSoonOption">Expiring Soon</option>
+                            <option value="expired" id="cardExpiredOption">Expired</option>
+                            <option value="no_expiry" id="cardNoExpiryOption">No Expiry Date</option>
+                            <option value="missing" id="cardMissingOption">Missing</option>
                         </select>
                     </div>
                 </div>
@@ -594,7 +594,7 @@
                         <div class="d-flex justify-content-center gap-3 flex-wrap">
                             <button class="btn btn-outline-secondary btn-lg" onclick="clearFilters()" style="border-radius: 20px;">
                                 <i class="fas fa-redo me-2"></i>
-                                <span id="clearBtn">إعادة تعيين</span>
+                                <span id="clearBtn">Reset</span>
                             </button>
                             <button class="btn btn-info btn-lg" onclick="toggleViewMode()" id="viewModeBtn" style="border-radius: 20px;">
                                 <i class="fas fa-list me-2"></i>
@@ -613,9 +613,9 @@
             <div class="results-section">
                 <div id="loadingIndicator" class="loading" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden" id="loadingText">جاري التحميل...</span>
+                        <span class="visually-hidden" id="loadingText">Loading...</span>
                     </div>
-                    <p class="mt-2" id="searchingText">جاري البحث...</p>
+                    <p class="mt-2" id="searchingText">Searching...</p>
                 </div>
 
                 <div id="resultsContainer">
@@ -634,68 +634,68 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">إضافة موظف جديد</h5>
+                    <h5 class="modal-title" id="modalTitle">Add New Employee</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form id="employeeForm">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="staffNoLabel">رقم الموظف *</label>
+                                <label class="form-label" id="staffNoLabel">Employee No. *</label>
                                 <input type="number" class="form-control" id="staffNo" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="jobCodeLabel">الوظيفة *</label>
+                                <label class="form-label" id="jobCodeLabel">Job *</label>
                                 <select class="form-select" id="jobCode" required>
-                                    <option value="" id="selectJobOption">اختر الوظيفة</option>
+                                    <option value="" id="selectJobOption">Select Job</option>
                                 </select>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="staffNameLabel">الاسم بالإنجليزية *</label>
+                                <label class="form-label" id="staffNameLabel">Name in English *</label>
                                 <input type="text" class="form-control" id="staffName" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="staffNameAraLabel">الاسم بالعربية *</label>
+                                <label class="form-label" id="staffNameAraLabel">Name in Arabic *</label>
                                 <input type="text" class="form-control" id="staffNameAra" required>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="nationalityCodeLabel">الجنسية *</label>
+                                <label class="form-label" id="nationalityCodeLabel">Nationality *</label>
                                 <select class="form-select" id="nationalityCode" required>
-                                    <option value="" id="selectNationalityOption">اختر الجنسية</option>
+                                    <option value="" id="selectNationalityOption">Select Nationality</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="companyCodeLabel">الشركة *</label>
+                                <label class="form-label" id="companyCodeLabel">Company *</label>
                                 <select class="form-select" id="companyCode" required>
-                                    <option value="" id="selectCompanyOption">اختر الشركة</option>
+                                    <option value="" id="selectCompanyOption">Select Company</option>
                                 </select>
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="passNoLabel">رقم الجواز</label>
+                                <label class="form-label" id="passNoLabel">Passport No.</label>
                                 <input type="text" class="form-control" id="passNo">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="cardNoLabel">رقم البطاقة</label>
+                                <label class="form-label" id="cardNoLabel">Card No.</label>
                                 <input type="number" class="form-control" id="cardNo">
                             </div>
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label" id="cardExpiryLabel">تاريخ انتهاء البطاقة</label>
+                                <label class="form-label" id="cardExpiryLabel">Card Expiry Date</label>
                                 <input type="date" class="form-control" id="cardExpiryDate">
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">إلغاء</button>
-                    <button type="button" class="btn btn-primary" onclick="saveEmployee()" id="saveBtn">حفظ</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveEmployee()" id="saveBtn">Save</button>
                 </div>
             </div>
         </div>
@@ -706,15 +706,15 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalTitle">تأكيد الحذف</h5>
+                    <h5 class="modal-title" id="deleteModalTitle">Confirm Deletion</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body" id="deleteModalBody">
-                    هل أنت متأكد من حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.
+                    Are you sure you want to delete this employee? This action cannot be undone.
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelDeleteBtn">إلغاء</button>
-                    <button type="button" class="btn btn-danger" onclick="confirmDelete()" id="confirmDeleteBtn">حذف</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelDeleteBtn">Cancel</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()" id="confirmDeleteBtn">Delete</button>
                 </div>
             </div>
         </div>
@@ -753,7 +753,7 @@
         })();
         
         // المتغيرات العامة
-        let currentLanguage = 'ar';
+        let currentLanguage = 'en';
         let currentPage = 1;
         let isEditMode = false;
         let currentEmployeeId = null;
@@ -877,8 +877,73 @@
             console.log('✅ App initialized successfully!');
         }
 
-        // النصوص بالعربية والإنجليزية
+        // النصوص بالإنجليزية والعربية
         const translations = {
+            en: {
+                pageTitle: 'Al-Aqeeli Group - Employee Management System',
+                languageBtn: 'العربية',
+                logoutBtn: 'Logout',
+                mainTitle: 'Al-Aqeeli Group',
+                subTitle: 'مجموعة شركات العقيلي',
+                totalEmployeesText: 'Total Employees',
+                passportMissingText: 'Missing Passports',
+                cardsMissingText: 'Missing Cards',
+                cardsExpiredText: 'Expired Cards',
+                searchTitle: 'Filters & Control',
+                addEmployeeBtn: 'Add New Employee',
+                searchLabel: 'Quick Search (Name, Employee No., Passport No.)',
+                nationalityLabel: 'Nationality',
+                companyLabel: 'Company',
+                jobLabel: 'Job',
+                passportStatusLabel: 'Passport Status',
+                cardStatusLabel: 'Card Status',
+                clearBtn: 'Reset',
+                viewModeText: 'Summary View',
+                summaryViewText: 'Detailed View',
+                employeeNoHeader: 'Employee No.',
+                nameHeader: 'Name',
+                nationalityHeader: 'Nationality',
+                companyHeader: 'Company',
+                passportHeader: 'Passport',
+                cardHeader: 'Card',
+                exportBtn: 'Export Results',
+                allNationalitiesOption: 'All Nationalities',
+                allCompaniesOption: 'All Companies',
+                allJobsOption: 'All Jobs',
+                allPassportStatusOption: 'All Status',
+                passportAvailableOption: 'Available',
+                passportMissingOption: 'Missing',
+                allCardStatusOption: 'All Status',
+                cardValidOption: 'Valid',
+                cardExpiringSoonOption: 'Expiring Soon',
+                cardExpiredOption: 'Expired',
+                cardNoExpiryOption: 'No Expiry Date',
+                cardMissingOption: 'Missing',
+                loadingText: 'Loading...',
+                searchingText: 'Searching...',
+                modalTitle: 'Add New Employee',
+                editModalTitle: 'Edit Employee Data',
+                staffNoLabel: 'Employee No. *',
+                jobCodeLabel: 'Job *',
+                staffNameLabel: 'Name in English *',
+                staffNameAraLabel: 'Name in Arabic *',
+                nationalityCodeLabel: 'Nationality *',
+                companyCodeLabel: 'Company *',
+                passNoLabel: 'Passport No.',
+                cardNoLabel: 'Card No.',
+                cardExpiryLabel: 'Card Expiry Date',
+                selectJobOption: 'Select Job',
+                selectNationalityOption: 'Select Nationality',
+                selectCompanyOption: 'Select Company',
+                cancelBtn: 'Cancel',
+                saveBtn: 'Save',
+                editBtn: 'Edit',
+                deleteBtn: 'Delete',
+                deleteModalTitle: 'Confirm Deletion',
+                deleteModalBody: 'Are you sure you want to delete this employee? This action cannot be undone.',
+                cancelDeleteBtn: 'Cancel',
+                confirmDeleteBtn: 'Delete'
+            },
             ar: {
                 pageTitle: 'مجموعة شركات العقيلي - Al-Aqeeli Group',
                 languageBtn: 'English',

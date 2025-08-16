@@ -1751,14 +1751,13 @@
                     `;
                 } else {
                     // عرض الاسم العربي دائماً
-                    const jobName = job.job_ara || job.job_eng;
-                    const otherJobName = job.job_eng || job.job_ara;
+                    const jobName = job.job_ara || job.job_eng || 'غير محدد';
+                    const otherJobName = job.job_eng || job.job_ara || '';
                     
                     item.innerHTML = `
                         <div>
                             <strong>${jobName}</strong>
-                            <br>
-                            <small class="text-muted">${otherJobName}</small>
+                            ${otherJobName && otherJobName !== jobName ? `<br><small class="text-muted">${otherJobName}</small>` : ''}
                         </div>
                     `;
                 }
@@ -1774,7 +1773,7 @@
                         selectedJob = job;
                     } else {
                         // عرض الاسم العربي دائماً
-                        const jobName = job.job_ara || job.job_eng;
+                        const jobName = job.job_ara || job.job_eng || 'غير محدد';
                         jobDisplay.value = jobName;
                         jobCode.value = job.job_code;
                         selectedJob = job;
@@ -2145,12 +2144,12 @@
 
         // تحديث قائمة الوظائف في autocomplete
         function updateJobAutocomplete(jobs) {
-            // تحديث البيانات العامة
+            // تحديث البيانات العامة مع تنظيف البيانات
             jobsData = jobs.map(job => ({
-                job_code: job.code.toString(),
-                job_ara: job.name_ara || job.name,
-                job_eng: job.name_eng || job.name
-            }));
+                job_code: job.code ? job.code.toString() : '',
+                job_ara: job.name_ara || job.name || '',
+                job_eng: job.name_eng || job.name || ''
+            })).filter(job => job.job_code && (job.job_ara || job.job_eng)); // تصفية البيانات الفارغة
             
             // إعداد نظام الاقتراحات للوظائف مرة أخرى
             setupJobAutocomplete();

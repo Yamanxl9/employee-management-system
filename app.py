@@ -682,8 +682,7 @@ def get_statistics():
 
 # API للحصول على قوائم الفلاتر
 @app.route('/api/filters')
-@require_auth
-def get_filters():
+def get_filters():  # إزالة @require_auth مؤقتاً
     nationality_codes = mongo.db.employees.distinct('nationality_code')
     
     # تحويل أكواد الجنسيات إلى أسماء كاملة

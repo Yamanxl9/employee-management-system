@@ -1507,8 +1507,8 @@
                 console.log('✅ Jobs loaded:', data.jobs.length);
                 console.log('🎉 All filters loaded successfully!');
                 
-                // تحميل بيانات الوظائف للاقتراحات
-                loadJobs();
+                // تحديث بيانات الوظائف للاقتراحات
+                updateJobAutocomplete(data.jobs);
                 
             } catch (error) {
                 console.error('❌ Error loading filters:', error);
@@ -2170,15 +2170,8 @@
                 
                 const data = await response.json();
                 
-                // تحميل قائمة الجنسيات في المودال
-                const nationalityCodeSelect = document.getElementById('nationalityCode');
-                nationalityCodeSelect.innerHTML = '<option value="" id="selectNationalityOption">اختر الجنسية</option>';
-                data.nationalities.forEach(nationality => {
-                    const option = document.createElement('option');
-                    option.value = nationality;
-                    option.textContent = nationality;
-                    nationalityCodeSelect.appendChild(option);
-                });
+                // تحميل قائمة الجنسيات في المودال (حقل نص حر)
+                // لا نحتاج لتحميل قائمة منسدلة للجنسيات لأنها أصبحت حقل نص
                 
                 // تحميل قائمة الشركات في المودال
                 const companyCodeSelect = document.getElementById('companyCode');

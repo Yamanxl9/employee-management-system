@@ -699,14 +699,76 @@ def get_filters():
     # ترتيب حسب الاسم الإنجليزي
     nationalities.sort(key=lambda x: x['name_en'])
     
-    companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, '_id': 0}))
-    jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, '_id': 0}).sort('job_code', 1))
+    companies = list(mongo.db.companies.find({}, {'code': 1, 'name_ara': 1, 'name_eng': 1, '_id': 0}))
+    jobs = list(mongo.db.jobs.find({}, {'code': 1, 'name_ara': 1, 'name_eng': 1, '_id': 0}).sort('code', 1))
     
     return jsonify({
         'nationalities': nationalities,
-        'companies': [{'code': c['company_code'], 'name': c['company_name_ara']} for c in companies],
-        'jobs': [{'code': j['job_code'], 'name': j['job_ara']} for j in jobs]
+        'companies': [{'code': c['code'], 'name': c['name_ara'], 'name_ara': c['name_ara'], 'name_eng': c.get('name_eng', c['name_ara'])} for c in companies],
+        'jobs': [{'code': j['code'], 'name': j['name_ara'], 'name_ara': j['name_ara'], 'name_eng': j.get('name_eng', j['name_ara'])} for j in jobs]
     })
+
+@app.route('/api/add-job', methods=['POST'])
+@require_auth
+def add_new_job():
+    """إضافة وظيفة جديدة"""
+    try:
+        data = request.get_json()
+        job_name = data.get('job_name', '').strip()
+        
+        if not job_name:
+            return jsonify({'success': False, 'message': 'اسم الوظيفة مطلوب'}), 400
+        
+        # التحقق من عدم وجود الوظيفة مسبقاً
+        existing_job = mongo.db.jobs.find_one({
+            '$or': [
+                {'name_ara': job_name},
+                {'name_eng': job_name}
+            ]
+        })
+        
+        if existing_job:
+            return jsonify({
+                'success': True, 
+                'job': {
+                    'job_code': existing_job['code'],
+                    'job_ara': existing_job['name_ara'],
+                    'job_eng': existing_job.get('name_eng', existing_job['name_ara'])
+                },
+                'message': 'الوظيفة موجودة مسبقاً'
+            })
+        
+        # إنشاء رقم جديد للوظيفة
+        last_job = mongo.db.jobs.find_one({}, sort=[('code', -1)])
+        new_job_code = int(last_job['code']) + 1 if last_job else 1
+        
+        # إضافة الوظيفة الجديدة
+        new_job = {
+            'code': new_job_code,
+            'name_ara': job_name,
+            'name_eng': job_name,  # نفس الاسم للعربية والإنجليزية
+            'created_at': datetime.now(timezone.utc)
+        }
+        
+        result = mongo.db.jobs.insert_one(new_job)
+        
+        if result.inserted_id:
+            log_activity('ADD_JOB', f'Added new job: {job_name}')
+            return jsonify({
+                'success': True,
+                'job': {
+                    'job_code': new_job_code,
+                    'job_ara': job_name,
+                    'job_eng': job_name
+                },
+                'message': 'تمت إضافة الوظيفة بنجاح'
+            })
+        else:
+            return jsonify({'success': False, 'message': 'فشل في إضافة الوظيفة'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error adding new job: {e}")
+        return jsonify({'success': False, 'message': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/test')
 def test_connection():

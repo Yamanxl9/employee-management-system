@@ -93,5 +93,20 @@
     "Job_Code": 19,
     "Job_Eng": "General Manager",
     "Job_Ara": "مدير عام"
+  },
+  {
+    "Job_Code": 20,
+    "Job_Eng": "Sales Officer",
+    "Job_Ara": "مسؤول مبيعات"
+  },
+  {
+    "Job_Code": 21,
+    "Job_Eng": "Driver",
+    "Job_Ara": "سائق"
+  },
+  {
+    "Job_Code": 22,
+    "Job_Eng": "Cleaner",
+    "Job_Ara": "عامل نظافة"
   }
 ]

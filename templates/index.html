@@ -30,6 +30,37 @@
             z-index: 1000;
             right: 0;
             top: 0;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.hidden {
+            transform: translateX(100%);
+        }
+        
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .sidebar-toggle:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+            transform: scale(1.1);
+        }
+        
+        .sidebar-toggle.sidebar-hidden {
+            right: 20px;
         }
         
         .sidebar .logo {
@@ -74,6 +105,11 @@
             margin-left: 0;
             margin-right: 250px;
             padding: 20px;
+            transition: margin-right 0.3s ease;
+        }
+        
+        .main-content.sidebar-hidden {
+            margin-right: 0;
         }
         
         .main-container {
@@ -420,11 +456,21 @@
             .sidebar {
                 right: 0;
                 left: auto;
+                width: 100%;
+                transform: translateX(100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
             }
             
             .main-content {
                 margin-right: 0;
                 margin-left: 0;
+            }
+            
+            .sidebar-toggle {
+                right: 20px;
             }
             
             .language-toggle, .logout-btn {
@@ -454,11 +500,57 @@
                 margin-bottom: 15px;
             }
         }
+        
+        /* تصميم اقتراحات الوظائف */
+        .job-input-container {
+            position: relative;
+        }
+        
+        #jobSuggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1050;
+            display: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .job-suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+            transition: background-color 0.15s ease-in-out;
+        }
+        
+        .job-suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .job-suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .job-suggestion-item small {
+            color: #6c757d;
+            font-size: 0.875em;
+        }
     </style>
 </head>
 <body>
+    <!-- زر إخفاء/إظهار الـ sidebar -->
+    <button class="sidebar-toggle" onclick="toggleSidebar()" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+    
     <!-- Sidebar -->
-    <div class="sidebar">
+    <div class="sidebar" id="sidebar">
         <div class="logo">
             <i class="fas fa-building fa-2x mb-2"></i>
             <h4>Al-Aqeeli Group</h4>
@@ -492,7 +584,7 @@
     </div>
     
     <!-- Main Content -->
-    <div class="main-content">
+    <div class="main-content" id="mainContent">
         <div class="main-container">
             <!-- العنوان الرئيسي -->
             <div class="header-section">
@@ -657,9 +749,11 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label" id="jobCodeLabel">Job *</label>
-                                <select class="form-select" id="jobCode" required>
-                                    <option value="" id="selectJobOption">Select Job</option>
-                                </select>
+                                <div class="job-input-container position-relative">
+                                    <input type="text" class="form-control" id="jobDisplay" placeholder="اختر أو اكتب الوظيفة" required autocomplete="off">
+                                    <input type="hidden" id="jobCode" required>
+                                    <div id="jobSuggestions" class="position-absolute w-100" style="z-index: 1050; max-height: 200px; overflow-y: auto; display: none;"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="row">
@@ -698,6 +792,12 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label" id="cardExpiryLabel">Card Expiry Date</label>
                                 <input type="date" class="form-control" id="cardExpiryDate">
+                                <small class="text-muted">اتركه فارغاً إذا لم تكن هناك بطاقة</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تاريخ الإضافة</label>
+                                <input type="date" class="form-control" id="createDate" readonly>
+                                <small class="text-muted">يتم تعيينه تلقائياً</small>
                             </div>
                         </div>
                     </form>
@@ -768,6 +868,7 @@
         let currentEmployeeId = null;
         let deleteEmployeeId = null;
         let authToken = localStorage.getItem('authToken');
+        let selectedJob = null; // الوظيفة المختارة
 
         // التحقق من تسجيل الدخول
         function checkAuth() {
@@ -869,6 +970,7 @@
             // تحميل البيانات الأساسية
             loadStatistics();
             loadFilters();
+            loadJobs(); // تحميل الوظائف للـ autocomplete
             
             // تحميل الموظفين مع تأخير للتأكد من جاهزية النظام
             setTimeout(() => {
@@ -1124,6 +1226,9 @@
             document.getElementById('jobFilter').addEventListener('change', searchEmployees);
             document.getElementById('passportStatusFilter').addEventListener('change', searchEmployees);
             document.getElementById('cardStatusFilter').addEventListener('change', searchEmployees);
+            
+            // إعداد نظام اقتراحات الوظائف
+            setupJobAutocomplete();
         }
 
         // اختبار الاتصال بالخادم
@@ -1148,6 +1253,26 @@
             currentLanguage = currentLanguage === 'ar' ? 'en' : 'ar';
             localStorage.setItem('selectedLanguage', currentLanguage); // حفظ اللغة
             updateLanguage();
+        }
+
+        // إخفاء/إظهار الـ sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            sidebar.classList.toggle('hidden');
+            mainContent.classList.toggle('sidebar-hidden');
+            
+            // تغيير أيقونة الزر
+            const icon = toggleBtn.querySelector('i');
+            if (sidebar.classList.contains('hidden')) {
+                icon.className = 'fas fa-chevron-left';
+                toggleBtn.classList.add('sidebar-hidden');
+            } else {
+                icon.className = 'fas fa-bars';
+                toggleBtn.classList.remove('sidebar-hidden');
+            }
         }
 
         // تحديث النصوص حسب اللغة
@@ -1382,46 +1507,322 @@
                 console.log('✅ Jobs loaded:', data.jobs.length);
                 console.log('🎉 All filters loaded successfully!');
                 
+                // تحميل بيانات الوظائف للاقتراحات
+                loadJobs();
+                
             } catch (error) {
                 console.error('❌ Error loading filters:', error);
+                // تحميل بيانات الوظائف الافتراضية في حالة الخطأ
+                loadJobs();
             }
         }
+
+        // قائمة الوظائف للاقتراحات
+        let jobsData = [];
 
         // تحميل الوظائف
         async function loadJobs() {
             try {
-                const jobs = [
-                    {code: 1, name: 'محاسب'},
-                    {code: 2, name: 'كاتب الأرشيف'},
-                    {code: 3, name: 'ممثل مبيعات تجاري'},
-                    {code: 4, name: 'مهندس كمبيوتر'},
-                    {code: 5, name: 'كاتب ملفات'},
-                    {code: 6, name: 'مدير التسويق'},
-                    {code: 7, name: 'مراسل'},
-                    {code: 8, name: 'مدير عمليات'},
-                    {code: 9, name: 'مدير المبيعات'},
-                    {code: 10, name: 'عامل مساعد بمتجر'},
-                    {code: 11, name: 'مندوب مبيعات الأكشاك والسوق'},
-                    {code: 12, name: 'محمل سفن'},
-                    {code: 13, name: 'استشاري قانوني'},
-                    {code: 14, name: 'مدير المالية'},
-                    {code: 15, name: 'مدير إدارة'},
-                    {code: 16, name: 'عامل الشحن والتفريغ'},
-                    {code: 17, name: 'أخصائي تسويق'},
-                    {code: 18, name: 'أمين مخزن'},
-                    {code: 19, name: 'مدير عام'}
-                ];
+                const response = await fetch('/api/filters');
+                const data = await response.json();
+                jobsData = data.jobs || [];
                 
-                const jobSelect = document.getElementById('jobCode');
-                jobs.forEach(job => {
-                    const option = document.createElement('option');
-                    option.value = job.code;
-                    option.textContent = job.name;
-                    jobSelect.appendChild(option);
-                });
+                // تحميل قائمة الوظائف في المودال
+                const jobCodeSelect = document.getElementById('jobCodeSelect');
+                if (jobCodeSelect) {
+                    jobCodeSelect.innerHTML = '<option value="">اختر الوظيفة</option>';
+                    data.jobs.forEach(job => {
+                        const option = document.createElement('option');
+                        option.value = job.code;
+                        option.textContent = job.job_ara || job.name; // الاسم العربي أولاً
+                        jobCodeSelect.appendChild(option);
+                    });
+                }
+                
+                // إعداد نظام الاقتراحات للوظائف
+                setupJobAutocomplete();
+                
             } catch (error) {
-                console.error('خطأ في تحميل الوظائف:', error);
+                console.error('Error loading jobs:', error);
+                // استخدام بيانات افتراضية في حالة الخطأ
+                jobsData = [
+                    { job_code: '1', job_ara: 'محاسب', job_eng: 'Accountant' },
+                    { job_code: '2', job_ara: 'كاتب الأرشيف', job_eng: 'Archive Clerk' },
+                    { job_code: '3', job_ara: 'ممثل مبيعات تجاري', job_eng: 'Commercial Sales Representative' },
+                    { job_code: '4', job_ara: 'مهندس كمبيوتر', job_eng: 'Computer Engineer' },
+                    { job_code: '5', job_ara: 'كاتب ملفات', job_eng: 'Filing Clerk' },
+                    { job_code: '6', job_ara: 'مدير التسويق', job_eng: 'Marketing Manager' },
+                    { job_code: '7', job_ara: 'مراسل', job_eng: 'Messenger' },
+                    { job_code: '8', job_ara: 'مدير عمليات', job_eng: 'Operations Manager' },
+                    { job_code: '9', job_ara: 'مدير المبيعات', job_eng: 'Sales Manager' },
+                    { job_code: '10', job_ara: 'عامل مساعد بمتجر', job_eng: 'Shop Assistant' },
+                    { job_code: '11', job_ara: 'مندوب مبيعات الأكشاك والسوق', job_eng: 'Stall and Market Salesperson' },
+                    { job_code: '12', job_ara: 'محمل سفن', job_eng: 'Stevedore' },
+                    { job_code: '13', job_ara: 'استشاري قانوني', job_eng: 'Legal Consultant' },
+                    { job_code: '14', job_ara: 'مدير المالية', job_eng: 'Finance Director' },
+                    { job_code: '15', job_ara: 'مدير إدارة', job_eng: 'Administration Manager' },
+                    { job_code: '16', job_ara: 'عامل الشحن والتفريغ', job_eng: 'Loading and unloading worker' },
+                    { job_code: '17', job_ara: 'أخصائي تسويق', job_eng: 'Marketing Specialist' },
+                    { job_code: '18', job_ara: 'أمين مخزن', job_eng: 'Storekeeper' },
+                    { job_code: '19', job_ara: 'مدير عام', job_eng: 'General Manager' },
+                    { job_code: '20', job_ara: 'سكرتير', job_eng: 'Secretary' },
+                    { job_code: '21', job_ara: 'سائق مركبة خفيفة', job_eng: 'Light Vehicle Driver' },
+                    { job_code: '22', job_ara: 'مسؤول مبيعات', job_eng: 'Sales Officer' }
+                ];
+                setupJobAutocomplete();
             }
+        }
+
+        // إعداد نظام الاقتراحات للوظائف
+        function setupJobAutocomplete() {
+            const jobInput = document.getElementById('jobCode');
+            const suggestionsDiv = document.getElementById('jobSuggestions');
+            
+            if (!jobInput || !suggestionsDiv) return;
+
+            // متغير لحفظ الوظيفة المختارة
+            let selectedJob = null;
+
+            // عند الكتابة في الحقل
+            jobInput.addEventListener('input', function() {
+                const query = this.value.toLowerCase().trim();
+                selectedJob = null;
+                
+                if (query.length === 0) {
+                    suggestionsDiv.style.display = 'none';
+                    return;
+                }
+
+                // البحث في الوظائف
+                const filteredJobs = jobsData.filter(job => {
+                    const jobName = currentLanguage === 'ar' ? job.job_ara : job.job_eng;
+                    const otherJobName = currentLanguage === 'ar' ? job.job_eng : job.job_ara;
+                    return jobName.toLowerCase().includes(query) || 
+                           otherJobName.toLowerCase().includes(query) ||
+                           job.job_code.includes(query);
+                });
+
+                if (filteredJobs.length > 0) {
+                    showJobSuggestions(filteredJobs, suggestionsDiv, jobInput);
+                } else {
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+
+            // إخفاء الاقتراحات عند فقدان التركيز
+            jobInput.addEventListener('blur', function() {
+                setTimeout(() => {
+                    suggestionsDiv.style.display = 'none';
+                }, 200);
+            });
+
+            // عند التركيز - عرض جميع الوظائف
+            jobInput.addEventListener('focus', function() {
+                if (this.value.trim() === '') {
+                    showJobSuggestions(jobsData, suggestionsDiv, jobInput);
+                }
+            });
+
+            // التحقق من صحة الإدخال عند الحفظ
+            jobInput.addEventListener('change', function() {
+                if (!selectedJob && this.value.trim() !== '') {
+                    // إضافة وظيفة جديدة تلقائياً
+                    const newJobName = this.value.trim();
+                    selectedJob = {
+                        job_code: 'new',
+                        job_ara: newJobName,
+                        job_eng: newJobName,
+                        isNew: true
+                    };
+                }
+            });
+
+            // دالة لحفظ الوظيفة المختارة
+            window.getSelectedJob = function() {
+                return selectedJob;
+            };
+        }
+
+        // عرض اقتراحات الوظائف
+        function showJobSuggestions(searchTerm = '') {
+            const jobDisplay = document.getElementById('jobDisplay');
+            const suggestionsDiv = document.getElementById('jobSuggestions');
+            
+            if (!jobDisplay || !suggestionsDiv) return;
+            
+            // قاموس ترجمة الوظائف الشائعة
+            const jobTranslations = {
+                'manager': ['مدير', 'مدير عام', 'مدير إدارة', 'مدير عمليات', 'مدير المبيعات', 'مدير التسويق', 'مدير المالية'],
+                'accountant': ['محاسب', 'محاسبين'],
+                'engineer': ['مهندس', 'مهندس كمبيوتر'],
+                'secretary': ['سكرتير', 'سكرتيرة'],
+                'driver': ['سائق', 'سائق مركبة خفيفة'],
+                'sales': ['مبيعات', 'مندوب مبيعات', 'ممثل مبيعات', 'مسؤول مبيعات'],
+                'marketing': ['تسويق', 'أخصائي تسويق', 'مدير التسويق'],
+                'clerk': ['كاتب', 'كاتب ملفات', 'كاتب الأرشيف'],
+                'assistant': ['مساعد', 'عامل مساعد'],
+                'consultant': ['استشاري', 'استشاري قانوني'],
+                'director': ['مدير', 'مدير عام'],
+                'officer': ['مسؤول', 'ضابط'],
+                'specialist': ['أخصائي', 'متخصص'],
+                'worker': ['عامل', 'عامل الشحن والتفريغ'],
+                'storekeeper': ['أمين مخزن', 'مخزن'],
+                'messenger': ['مراسل'],
+                'stevedore': ['محمل سفن'],
+                'legal': ['قانوني', 'استشاري قانوني'],
+                'finance': ['مالية', 'مدير المالية'],
+                'administration': ['إدارة', 'مدير إدارة'],
+                'loading': ['شحن', 'تفريغ', 'عامل الشحن والتفريغ'],
+                'shop': ['متجر', 'عامل مساعد بمتجر'],
+                'market': ['سوق', 'مندوب مبيعات الأكشاك والسوق'],
+                'commercial': ['تجاري', 'ممثل مبيعات تجاري'],
+                'computer': ['كمبيوتر', 'مهندس كمبيوتر'],
+                'archive': ['أرشيف', 'كاتب الأرشيف'],
+                'filing': ['ملفات', 'كاتب ملفات'],
+                'operations': ['عمليات', 'مدير عمليات'],
+                'general': ['عام', 'مدير عام'],
+                'light vehicle': ['مركبة خفيفة', 'سائق مركبة خفيفة']
+            };
+            
+            // تصفية الوظائف حسب النص المدخل
+            let filteredJobs = [];
+            
+            if (!searchTerm) {
+                filteredJobs = jobsData;
+            } else {
+                const searchLower = searchTerm.toLowerCase();
+                
+                // البحث المباشر في أسماء الوظائف
+                filteredJobs = jobsData.filter(job => {
+                    const jobAra = job.job_ara ? job.job_ara.toLowerCase() : '';
+                    const jobEng = job.job_eng ? job.job_eng.toLowerCase() : '';
+                    
+                    return jobAra.includes(searchLower) || jobEng.includes(searchLower);
+                });
+                
+                // إذا لم نجد نتائج، جرب البحث بالترجمات
+                if (filteredJobs.length === 0) {
+                    for (const [englishTerm, arabicTerms] of Object.entries(jobTranslations)) {
+                        if (englishTerm.toLowerCase().includes(searchLower) || searchLower.includes(englishTerm.toLowerCase())) {
+                            const relatedJobs = jobsData.filter(job => {
+                                const jobAra = job.job_ara ? job.job_ara.toLowerCase() : '';
+                                const jobEng = job.job_eng ? job.job_eng.toLowerCase() : '';
+                                
+                                return arabicTerms.some(term => 
+                                    jobAra.includes(term.toLowerCase()) || 
+                                    jobEng.includes(term.toLowerCase())
+                                );
+                            });
+                            filteredJobs = filteredJobs.concat(relatedJobs);
+                        }
+                    }
+                    
+                    // إزالة المكررات
+                    filteredJobs = filteredJobs.filter((job, index, self) => 
+                        self.findIndex(j => j.job_code === job.job_code) === index
+                    );
+                }
+                
+                // إذا لم نجد أي نتائج، اقترح إضافة وظيفة جديدة
+                if (filteredJobs.length === 0 && searchTerm.trim() !== '') {
+                    filteredJobs = [{
+                        job_code: 'new',
+                        job_ara: searchTerm.trim(),
+                        job_eng: searchTerm.trim(),
+                        isNew: true
+                    }];
+                }
+            }
+            
+            suggestionsDiv.innerHTML = '';
+            
+            // عرض أقصى 10 اقتراحات
+            filteredJobs.slice(0, 10).forEach(job => {
+                const item = document.createElement('div');
+                item.className = 'job-suggestion-item';
+                
+                if (job.isNew) {
+                    item.innerHTML = `
+                        <div>
+                            <strong>➕ إضافة وظيفة جديدة: "${job.job_ara}"</strong>
+                            <br>
+                            <small class="text-muted">انقر لإضافة هذه الوظيفة</small>
+                        </div>
+                    `;
+                } else {
+                    // عرض الاسم العربي دائماً
+                    const jobName = job.job_ara || job.job_eng;
+                    const otherJobName = job.job_eng || job.job_ara;
+                    
+                    item.innerHTML = `
+                        <div>
+                            <strong>${jobName}</strong>
+                            <br>
+                            <small class="text-muted">${otherJobName}</small>
+                        </div>
+                    `;
+                }
+                
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const jobDisplay = document.getElementById('jobDisplay');
+                    const jobCode = document.getElementById('jobCode');
+                    
+                    if (job.isNew) {
+                        jobDisplay.value = job.job_ara;
+                        jobCode.value = 'new';
+                        selectedJob = job;
+                    } else {
+                        // عرض الاسم العربي دائماً
+                        const jobName = job.job_ara || job.job_eng;
+                        jobDisplay.value = jobName;
+                        jobCode.value = job.job_code;
+                        selectedJob = job;
+                    }
+                    
+                    suggestionsDiv.style.display = 'none';
+                });
+                
+                suggestionsDiv.appendChild(item);
+            });
+            
+            suggestionsDiv.style.display = 'block';
+        }
+
+        // وظيفة إخفاء الاقتراحات
+        function hideJobSuggestions() {
+            const suggestionsDiv = document.getElementById('jobSuggestions');
+            if (suggestionsDiv) {
+                suggestionsDiv.style.display = 'none';
+            }
+        }
+
+        // إعداد نظام الاقتراحات للوظائف
+        function setupJobAutocomplete() {
+            const jobDisplay = document.getElementById('jobDisplay');
+            const suggestionsDiv = document.getElementById('jobSuggestions');
+            
+            if (!jobDisplay || !suggestionsDiv) return;
+            
+            // إظهار الاقتراحات عند التركيز
+            jobDisplay.addEventListener('focus', function() {
+                showJobSuggestions(this.value);
+            });
+            
+            // البحث أثناء الكتابة
+            jobDisplay.addEventListener('input', function() {
+                showJobSuggestions(this.value);
+                // إعادة تعيين الوظيفة المختارة عند تغيير النص
+                selectedJob = null;
+                document.getElementById('jobCode').value = '';
+            });
+            
+            // إخفاء الاقتراحات عند النقر خارجها
+            document.addEventListener('click', function(e) {
+                if (!jobDisplay.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                    hideJobSuggestions();
+                }
+            });
         }
 
         // متغيرات العرض
@@ -1742,6 +2143,19 @@
             paginationContainer.innerHTML = paginationHTML;
         }
 
+        // تحديث قائمة الوظائف في autocomplete
+        function updateJobAutocomplete(jobs) {
+            // تحديث البيانات العامة
+            jobsData = jobs.map(job => ({
+                job_code: job.code.toString(),
+                job_ara: job.name_ara || job.name,
+                job_eng: job.name_eng || job.name
+            }));
+            
+            // إعداد نظام الاقتراحات للوظائف مرة أخرى
+            setupJobAutocomplete();
+        }
+
         // تحميل بيانات المودال (الوظائف، الشركات، الجنسيات)
         async function loadModalData() {
             try {
@@ -1786,6 +2200,9 @@
                     option.textContent = job.name;
                     jobCodeSelect.appendChild(option);
                 });
+
+                // تحديث قائمة الوظائف في autocomplete أيضاً
+                updateJobAutocomplete(data.jobs);
                 
             } catch (error) {
                 console.error('خطأ في تحميل بيانات المودال:', error);
@@ -1802,6 +2219,15 @@
             // مسح الحقول
             document.getElementById('employeeForm').reset();
             document.getElementById('staffNo').disabled = false;
+            
+            // مسح حقول الوظيفة
+            document.getElementById('jobDisplay').value = '';
+            document.getElementById('jobCode').value = '';
+            selectedJob = null;
+            
+            // تعيين تاريخ اليوم كتاريخ افتراضي
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('createDate').value = today;
             
             // تحميل بيانات المودال
             await loadModalData();
@@ -1842,12 +2268,50 @@
                 document.getElementById('staffNo').disabled = true;
                 document.getElementById('staffName').value = employee.staff_name || '';
                 document.getElementById('staffNameAra').value = employee.staff_name_ara || '';
-                document.getElementById('jobCode').value = employee.job_code || '';
+                
+                // تعيين الوظيفة
+                const jobCode = employee.job_code;
+                if (jobCode && jobsData.length > 0) {
+                    const foundJob = jobsData.find(job => job.job_code === jobCode.toString());
+                    if (foundJob) {
+                        // عرض الاسم العربي دائماً
+                        const jobName = foundJob.job_ara || foundJob.job_eng;
+                        document.getElementById('jobDisplay').value = jobName;
+                        document.getElementById('jobCode').value = foundJob.job_code;
+                        selectedJob = foundJob;
+                    } else {
+                        document.getElementById('jobDisplay').value = `وظيفة رقم ${jobCode}`;
+                        document.getElementById('jobCode').value = jobCode;
+                    }
+                } else {
+                    document.getElementById('jobDisplay').value = '';
+                    document.getElementById('jobCode').value = '';
+                }
+                
                 document.getElementById('nationalityCode').value = employee.nationality_code || '';
                 document.getElementById('companyCode').value = employee.company_code || '';
                 document.getElementById('passNo').value = employee.pass_no || '';
                 document.getElementById('cardNo').value = employee.card_no || '';
-                document.getElementById('cardExpiryDate').value = employee.card_expiry_date || '';
+                
+                // تنسيق التاريخ للعرض
+                if (employee.card_expiry_date) {
+                    const expiryDate = new Date(employee.card_expiry_date);
+                    if (!isNaN(expiryDate.getTime())) {
+                        document.getElementById('cardExpiryDate').value = expiryDate.toISOString().split('T')[0];
+                    }
+                } else {
+                    document.getElementById('cardExpiryDate').value = '';
+                }
+                
+                // عرض تاريخ الإنشاء
+                if (employee.create_date_time) {
+                    const createDate = new Date(employee.create_date_time);
+                    if (!isNaN(createDate.getTime())) {
+                        document.getElementById('createDate').value = createDate.toISOString().split('T')[0];
+                    }
+                } else {
+                    document.getElementById('createDate').value = '';
+                }
                 
                 // فتح المودال
                 new bootstrap.Modal(document.getElementById('employeeModal')).show();
@@ -1871,11 +2335,82 @@
                 return;
             }
             
+            // التعامل مع الوظيفة الجديدة أولاً
+            let jobCode = null;
+            const jobDisplay = document.getElementById('jobDisplay');
+            const jobCodeField = document.getElementById('jobCode');
+            
+            if (selectedJob) {
+                if (selectedJob.isNew) {
+                    // إضافة الوظيفة الجديدة
+                    try {
+                        const jobResponse = await fetch('/api/add-job', {
+                            method: 'POST',
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify({ job_name: selectedJob.job_ara })
+                        });
+                        
+                        const jobResult = await jobResponse.json();
+                        if (jobResult.success) {
+                            jobCode = parseInt(jobResult.job.job_code);
+                            console.log('تمت إضافة وظيفة جديدة:', jobResult.job);
+                        } else {
+                            throw new Error(jobResult.message);
+                        }
+                    } catch (error) {
+                        console.error('خطأ في إضافة الوظيفة:', error);
+                        alert('خطأ في إضافة الوظيفة الجديدة: ' + error.message);
+                        return;
+                    }
+                } else {
+                    jobCode = parseInt(selectedJob.job_code);
+                }
+            } else if (jobCodeField.value) {
+                // استخدام رمز الوظيفة إذا كان متوفراً
+                jobCode = parseInt(jobCodeField.value);
+            } else {
+                // محاولة العثور على الوظيفة بالاسم
+                const jobName = jobDisplay.value.trim();
+                const foundJob = jobsData.find(job => 
+                    job.job_ara === jobName || job.job_eng === jobName
+                );
+                
+                if (foundJob) {
+                    jobCode = parseInt(foundJob.job_code);
+                } else if (jobName) {
+                    // إضافة وظيفة جديدة
+                    try {
+                        const jobResponse = await fetch('/api/add-job', {
+                            method: 'POST',
+                            headers: getAuthHeaders(),
+                            body: JSON.stringify({ job_name: jobName })
+                        });
+                        
+                        const jobResult = await jobResponse.json();
+                        if (jobResult.success) {
+                            jobCode = parseInt(jobResult.job.job_code);
+                            console.log('تمت إضافة وظيفة جديدة:', jobResult.job);
+                        } else {
+                            throw new Error(jobResult.message);
+                        }
+                    } catch (error) {
+                        console.error('خطأ في إضافة الوظيفة:', error);
+                        alert('خطأ في إضافة الوظيفة الجديدة: ' + error.message);
+                        return;
+                    }
+                }
+            }
+            
+            if (!jobCode) {
+                alert('يرجى اختيار أو إدخال وظيفة صحيحة');
+                return;
+            }
+            
             const data = {
                 staff_no: parseInt(document.getElementById('staffNo').value),
                 staff_name: document.getElementById('staffName').value,
                 staff_name_ara: document.getElementById('staffNameAra').value,
-                job_code: parseInt(document.getElementById('jobCode').value),
+                job_code: jobCode,
                 nationality_code: document.getElementById('nationalityCode').value,
                 company_code: document.getElementById('companyCode').value,
                 pass_no: document.getElementById('passNo').value || null,
@@ -1909,6 +2444,7 @@
                     bootstrap.Modal.getInstance(document.getElementById('employeeModal')).hide();
                     await loadStatistics();
                     await searchEmployees();
+                    await loadJobs(); // إعادة تحميل الوظائف لتشمل الوظيفة الجديدة
                     showNotification(
                         currentLanguage === 'ar' ? 'تم حفظ البيانات بنجاح!' : 'Data saved successfully!',
                         'success'

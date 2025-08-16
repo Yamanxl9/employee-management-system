@@ -1525,16 +1525,33 @@
             try {
                 const response = await fetch('/api/filters');
                 const data = await response.json();
-                jobsData = data.jobs || [];
+                console.log('بيانات API المستلمة:', data);
+                
+                // تحديث jobsData من البيانات المستلمة
+                if (data.jobs && Array.isArray(data.jobs)) {
+                    jobsData = data.jobs.map(job => ({
+                        job_code: job.code,
+                        job_ara: job.name_ara || job.name,
+                        job_eng: job.name_eng || job.name,
+                        name: job.name_ara || job.name,
+                        name_ara: job.name_ara || job.name,
+                        name_eng: job.name_eng || job.name,
+                        code: job.code
+                    }));
+                    console.log('تم تحديث jobsData من قاعدة البيانات:', jobsData.length, 'وظيفة');
+                } else {
+                    console.warn('لم يتم العثور على بيانات الوظائف في الاستجابة');
+                    jobsData = [];
+                }
                 
                 // تحميل قائمة الوظائف في المودال
                 const jobCodeSelect = document.getElementById('jobCodeSelect');
-                if (jobCodeSelect) {
+                if (jobCodeSelect && data.jobs) {
                     jobCodeSelect.innerHTML = '<option value="">اختر الوظيفة</option>';
                     data.jobs.forEach(job => {
                         const option = document.createElement('option');
                         option.value = job.code;
-                        option.textContent = job.job_ara || job.name; // الاسم العربي أولاً
+                        option.textContent = job.name_ara || job.name; // الاسم العربي أولاً
                         jobCodeSelect.appendChild(option);
                     });
                 }
@@ -1543,42 +1560,62 @@
                 setupJobAutocomplete();
                 
             } catch (error) {
-                console.error('Error loading jobs:', error);
-                // استخدام بيانات افتراضية في حالة الخطأ
-                jobsData = [
-                    { job_code: '1', job_ara: 'محاسب', job_eng: 'Accountant' },
-                    { job_code: '2', job_ara: 'كاتب الأرشيف', job_eng: 'Archive Clerk' },
-                    { job_code: '3', job_ara: 'ممثل مبيعات تجاري', job_eng: 'Commercial Sales Representative' },
-                    { job_code: '4', job_ara: 'مهندس كمبيوتر', job_eng: 'Computer Engineer' },
-                    { job_code: '5', job_ara: 'كاتب ملفات', job_eng: 'Filing Clerk' },
-                    { job_code: '6', job_ara: 'مدير التسويق', job_eng: 'Marketing Manager' },
-                    { job_code: '7', job_ara: 'مراسل', job_eng: 'Messenger' },
-                    { job_code: '8', job_ara: 'مدير عمليات', job_eng: 'Operations Manager' },
-                    { job_code: '9', job_ara: 'مدير المبيعات', job_eng: 'Sales Manager' },
-                    { job_code: '10', job_ara: 'عامل مساعد بمتجر', job_eng: 'Shop Assistant' },
-                    { job_code: '11', job_ara: 'مندوب مبيعات الأكشاك والسوق', job_eng: 'Stall and Market Salesperson' },
-                    { job_code: '12', job_ara: 'محمل سفن', job_eng: 'Stevedore' },
-                    { job_code: '13', job_ara: 'استشاري قانوني', job_eng: 'Legal Consultant' },
-                    { job_code: '14', job_ara: 'مدير المالية', job_eng: 'Finance Director' },
-                    { job_code: '15', job_ara: 'مدير إدارة', job_eng: 'Administration Manager' },
-                    { job_code: '16', job_ara: 'عامل الشحن والتفريغ', job_eng: 'Loading and unloading worker' },
-                    { job_code: '17', job_ara: 'أخصائي تسويق', job_eng: 'Marketing Specialist' },
-                    { job_code: '18', job_ara: 'أمين مخزن', job_eng: 'Storekeeper' },
-                    { job_code: '19', job_ara: 'مدير عام', job_eng: 'General Manager' },
-                    { job_code: '20', job_ara: 'سكرتير', job_eng: 'Secretary' },
-                    { job_code: '21', job_ara: 'سائق مركبة خفيفة', job_eng: 'Light Vehicle Driver' },
-                    { job_code: '22', job_ara: 'مسؤول مبيعات', job_eng: 'Sales Officer' }
-                ];
+                console.error('خطأ في تحميل الوظائف:', error);
+                jobsData = [];
                 setupJobAutocomplete();
             }
         }
 
+        // دالة عرض اقتراحات الوظائف
+        function showJobSuggestions(jobs, suggestionsDiv, jobInput, jobCodeHidden) {
+            suggestionsDiv.innerHTML = '';
+            
+            if (!jobs || jobs.length === 0) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+            
+            jobs.slice(0, 10).forEach(job => { // عرض أول 10 نتائج فقط
+                const div = document.createElement('div');
+                div.className = 'job-suggestion-item';
+                div.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; background: white;';
+                
+                const jobName = currentLanguage === 'ar' ? job.name_ara : job.name_eng;
+                const otherJobName = currentLanguage === 'ar' ? job.name_eng : job.name_ara;
+                
+                div.innerHTML = `
+                    <div style="font-weight: bold; color: #333;">${jobName || job.name || 'Unknown'}</div>
+                    <small style="color: #666; display: block;">${otherJobName || job.code || ''}</small>
+                `;
+                
+                div.addEventListener('click', function() {
+                    jobInput.value = jobName || job.name || 'Unknown';
+                    jobCodeHidden.value = job.code || '';
+                    suggestionsDiv.style.display = 'none';
+                });
+                
+                div.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                
+                div.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+                
+                suggestionsDiv.appendChild(div);
+            });
+            
+            suggestionsDiv.style.display = 'block';
+            suggestionsDiv.style.cssText += 'background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+        }
+
         // إعداد نظام الاقتراحات للوظائف
         function setupJobAutocomplete() {
-            const jobInput = document.getElementById('jobCode');
+            const jobInput = document.getElementById('jobDisplay'); // تغيير من jobCode إلى jobDisplay
+            const jobCodeHidden = document.getElementById('jobCode'); // الحقل المخفي للكود
             const suggestionsDiv = document.getElementById('jobSuggestions');
             
-            if (!jobInput || !suggestionsDiv) return;
+            if (!jobInput || !suggestionsDiv || !jobCodeHidden) return;
 
             // متغير لحفظ الوظيفة المختارة
             let selectedJob = null;
@@ -1587,6 +1624,7 @@
             jobInput.addEventListener('input', function() {
                 const query = this.value.toLowerCase().trim();
                 selectedJob = null;
+                jobCodeHidden.value = ''; // مسح الكود المخفي
                 
                 if (query.length === 0) {
                     suggestionsDiv.style.display = 'none';
@@ -1595,15 +1633,19 @@
 
                 // البحث في الوظائف
                 const filteredJobs = jobsData.filter(job => {
-                    const jobName = currentLanguage === 'ar' ? job.job_ara : job.job_eng;
-                    const otherJobName = currentLanguage === 'ar' ? job.job_eng : job.job_ara;
-                    return jobName.toLowerCase().includes(query) || 
-                           otherJobName.toLowerCase().includes(query) ||
-                           job.job_code.includes(query);
+                    const jobName = currentLanguage === 'ar' ? 
+                        (job.name_ara || job.job_ara || job.name) : 
+                        (job.name_eng || job.job_eng || job.name);
+                    const otherJobName = currentLanguage === 'ar' ? 
+                        (job.name_eng || job.job_eng) : 
+                        (job.name_ara || job.job_ara || job.name);
+                    return (jobName && jobName.toLowerCase().includes(query)) || 
+                           (otherJobName && otherJobName.toLowerCase().includes(query)) ||
+                           (job.code && job.code.toString().includes(query));
                 });
 
                 if (filteredJobs.length > 0) {
-                    showJobSuggestions(filteredJobs, suggestionsDiv, jobInput);
+                    showJobSuggestions(filteredJobs, suggestionsDiv, jobInput, jobCodeHidden);
                 } else {
                     suggestionsDiv.style.display = 'none';
                 }
@@ -1619,7 +1661,7 @@
             // عند التركيز - عرض جميع الوظائف
             jobInput.addEventListener('focus', function() {
                 if (this.value.trim() === '') {
-                    showJobSuggestions(jobsData, suggestionsDiv, jobInput);
+                    showJobSuggestions(jobsData, suggestionsDiv, jobInput, jobCodeHidden);
                 }
             });
 

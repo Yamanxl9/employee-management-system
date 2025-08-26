@@ -1127,6 +1127,11 @@ def get_detailed_results():
     try:
         data = request.get_json()
         
+        # التحقق من وجود البيانات
+        if not data:
+            logger.warning("No data received in get_detailed_results")
+            return jsonify({'error': 'لا توجد بيانات مرسلة'}), 400
+        
         # معايير البحث
         query = data.get('query', '').strip()
         nationality = data.get('nationality', '')
@@ -1134,6 +1139,8 @@ def get_detailed_results():
         job = data.get('job', '')
         passport_status = data.get('passport_status', '')
         card_status = data.get('card_status', '')
+        
+        logger.info(f"Detailed search request: query='{query}', nationality='{nationality}', company='{company}', job='{job}', passport_status='{passport_status}', card_status='{card_status}'")
         
         # بناء استعلام البحث (نفس المنطق من API البحث الأساسي)
         filter_query = {}
@@ -1161,11 +1168,24 @@ def get_detailed_results():
         if passport_status == 'available':
             filter_query['pass_no'] = {'$exists': True, '$ne': None, '$ne': ''}
         elif passport_status == 'missing':
-            filter_query['$or'] = [
-                {'pass_no': {'$exists': False}},
-                {'pass_no': None},
-                {'pass_no': ''}
-            ]
+            if '$or' in filter_query:
+                # إذا كان هناك $or مسبقاً (من البحث النصي)، نحوله إلى $and
+                existing_or = filter_query.pop('$or')
+                filter_query['$and'] = filter_query.get('$and', [])
+                filter_query['$and'].append({'$or': existing_or})
+                filter_query['$and'].append({
+                    '$or': [
+                        {'pass_no': {'$exists': False}},
+                        {'pass_no': None},
+                        {'pass_no': ''}
+                    ]
+                })
+            else:
+                filter_query['$or'] = [
+                    {'pass_no': {'$exists': False}},
+                    {'pass_no': None},
+                    {'pass_no': ''}
+                ]
         
         # فلترة حالة البطاقة
         if card_status == 'valid':
@@ -1193,11 +1213,24 @@ def get_detailed_results():
                 'card_expiry_date': {'$lt': current_date}
             })
         elif card_status == 'missing':
-            filter_query['$or'] = [
-                {'card_no': {'$exists': False}},
-                {'card_no': None},
-                {'card_no': ''}
-            ]
+            if '$or' in filter_query:
+                # إذا كان هناك $or مسبقاً، نحوله إلى $and
+                existing_or = filter_query.pop('$or')
+                filter_query['$and'] = filter_query.get('$and', [])
+                filter_query['$and'].append({'$or': existing_or})
+                filter_query['$and'].append({
+                    '$or': [
+                        {'card_no': {'$exists': False}},
+                        {'card_no': None},
+                        {'card_no': ''}
+                    ]
+                })
+            else:
+                filter_query['$or'] = [
+                    {'card_no': {'$exists': False}},
+                    {'card_no': None},
+                    {'card_no': ''}
+                ]
         elif card_status == 'no_expiry':
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
@@ -1206,7 +1239,12 @@ def get_detailed_results():
             })
         
         # جلب جميع البيانات التفصيلية
-        employees = list(mongo.db.employees.find(filter_query))
+        try:
+            employees = list(mongo.db.employees.find(filter_query))
+            logger.info(f"Found {len(employees)} employees matching filter: {filter_query}")
+        except Exception as db_error:
+            logger.error(f"Database query error: {str(db_error)}")
+            return jsonify({'error': f'خطأ في قاعدة البيانات: {str(db_error)}'}), 500
         
         # معالجة البيانات وإضافة نصوص الحالة
         detailed_results = []
@@ -1268,7 +1306,9 @@ def get_detailed_results():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error in get_detailed_results: {str(e)}")
+        logger.error(f"Filter query was: {filter_query if 'filter_query' in locals() else 'Not defined'}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/export-filtered-results', methods=['POST'])
 @require_auth

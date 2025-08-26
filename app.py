@@ -1249,6 +1249,10 @@ def get_detailed_results():
         # معالجة البيانات وإضافة نصوص الحالة
         detailed_results = []
         for emp in employees:
+            # تحويل ObjectId إلى string
+            if '_id' in emp:
+                emp['_id'] = str(emp['_id'])
+            
             # حالة الجواز
             if emp.get('pass_no'):
                 passport_text = 'متوفر'
@@ -1278,6 +1282,9 @@ def get_detailed_results():
             
             # إضافة البيانات مع النصوص
             emp_data = emp.copy()
+            # تحويل ObjectId إلى string
+            if '_id' in emp_data:
+                emp_data['_id'] = str(emp_data['_id'])
             emp_data['passport_text'] = passport_text
             emp_data['card_text'] = card_text
             

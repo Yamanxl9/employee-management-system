@@ -707,6 +707,10 @@
                                 <i class="fas fa-file-excel me-2"></i>
                                 <span id="exportBtn">تصدير النتائج</span>
                             </button>
+                            <button class="btn btn-warning btn-lg" onclick="openManagementModal()" style="border-radius: 20px;">
+                                <i class="fas fa-cogs me-2"></i>
+                                <span id="managementBtn">إدارة البيانات</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -933,6 +937,147 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
                     <button type="button" class="btn btn-success" onclick="saveNewCompany()">حفظ الشركة</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal إدارة البيانات -->
+    <div class="modal fade" id="managementModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="managementModalTitle">إدارة الشركات والوظائف</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- تبويبات الإدارة -->
+                    <ul class="nav nav-tabs" id="managementTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies" type="button" role="tab">إدارة الشركات</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" type="button" role="tab">إدارة الوظائف</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="managementTabContent">
+                        <!-- تبويب إدارة الشركات -->
+                        <div class="tab-pane fade show active" id="companies" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>قائمة الشركات</h6>
+                                    <button class="btn btn-primary btn-sm" onclick="addNewCompanyInModal()">
+                                        <i class="fas fa-plus me-1"></i>
+                                        إضافة شركة
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>كود الشركة</th>
+                                                <th>الاسم العربي</th>
+                                                <th>الاسم الإنجليزي</th>
+                                                <th>عدد الموظفين</th>
+                                                <th>الإجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="companiesTableBody">
+                                            <!-- سيتم ملؤها بواسطة JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- تبويب إدارة الوظائف -->
+                        <div class="tab-pane fade" id="jobs" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>قائمة الوظائف</h6>
+                                    <button class="btn btn-primary btn-sm" onclick="addNewJobInModal()">
+                                        <i class="fas fa-plus me-1"></i>
+                                        إضافة وظيفة
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>كود الوظيفة</th>
+                                                <th>الاسم العربي</th>
+                                                <th>الاسم الإنجليزي</th>
+                                                <th>عدد الموظفين</th>
+                                                <th>الإجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="jobsTableBody">
+                                            <!-- سيتم ملؤها بواسطة JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal تعديل الشركة -->
+    <div class="modal fade" id="editCompanyModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الشركة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editCompanyForm">
+                        <input type="hidden" id="editCompanyCode">
+                        <div class="mb-3">
+                            <label class="form-label">الاسم العربي *</label>
+                            <input type="text" class="form-control" id="editCompanyNameAra" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الاسم الإنجليزي *</label>
+                            <input type="text" class="form-control" id="editCompanyNameEng" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-success" onclick="saveCompanyEdit()">حفظ التعديل</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal تعديل الوظيفة -->
+    <div class="modal fade" id="editJobModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل الوظيفة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editJobForm">
+                        <input type="hidden" id="editJobCode">
+                        <div class="mb-3">
+                            <label class="form-label">الاسم العربي *</label>
+                            <input type="text" class="form-control" id="editJobAra" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الاسم الإنجليزي *</label>
+                            <input type="text" class="form-control" id="editJobEng" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-success" onclick="saveJobEdit()">حفظ التعديل</button>
                 </div>
             </div>
         </div>
@@ -1197,6 +1342,7 @@
                 passportHeader: 'الجواز',
                 cardHeader: 'البطاقة',
                 exportBtn: 'تصدير النتائج',
+                managementBtn: 'إدارة البيانات',
                 allNationalitiesOption: 'جميع الجنسيات',
                 allCompaniesOption: 'جميع الشركات',
                 allJobsOption: 'جميع الوظائف',
@@ -1467,6 +1613,7 @@
                 // تحديث أزرار العرض والتصدير
                 safeUpdateText('viewModeText', t.viewModeText);
                 safeUpdateText('exportBtn', t.exportBtn);
+                safeUpdateText('managementBtn', currentLanguage === 'ar' ? 'إدارة البيانات' : 'Data Management');
                 
                 // تحديث خيارات الفلاتر
                 safeUpdateText('allNationalitiesOption', t.allNationalitiesOption);
@@ -2890,24 +3037,22 @@
                     card_status: document.getElementById('cardStatusFilter').value
                 };
 
-                // إرسال طلب للحصول على جميع النتائج المفلترة (بدون pagination)
-                const params = new URLSearchParams(filters);
-                params.set('page', '1');
-                params.set('per_page', '10000'); // رقم كبير للحصول على جميع النتائج
-
-                const response = await fetch(`/api/search?${params}`, {
-                    headers: getAuthHeaders()
+                // إرسال طلب للحصول على جميع النتائج المفلترة التفصيلية
+                const detailsResponse = await fetch(`/api/get-detailed-results`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(filters)
                 });
                 
-                if (response.status === 401) {
+                if (detailsResponse.status === 401) {
                     localStorage.removeItem('authToken');
                     window.location.href = '/login';
                     return;
                 }
                 
-                const data = await response.json();
+                const detailsData = await detailsResponse.json();
 
-                if (data.employees.length === 0) {
+                if (detailsData.employees.length === 0) {
                     showNotification(
                         currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير' : 'No results to export',
                         'warning'
@@ -2920,9 +3065,9 @@
                     method: 'POST',
                     headers: getAuthHeaders(),
                     body: JSON.stringify({
-                        employees: data.employees,
+                        employees: detailsData.employees,
                         filters: filters,
-                        total: data.total
+                        total: detailsData.total
                     })
                 });
 
@@ -3035,6 +3180,282 @@
                 }
             }, 1000);
         };
+
+        // دوال إدارة البيانات
+        function openManagementModal() {
+            const managementModal = new bootstrap.Modal(document.getElementById('managementModal'));
+            loadCompaniesData();
+            loadJobsData();
+            managementModal.show();
+        }
+
+        // تحميل بيانات الشركات
+        async function loadCompaniesData() {
+            try {
+                const response = await fetch('/api/companies', {
+                    headers: getAuthHeaders()
+                });
+                const companies = await response.json();
+                
+                const tbody = document.getElementById('companiesTableBody');
+                tbody.innerHTML = '';
+                
+                for (const company of companies) {
+                    // حساب عدد الموظفين
+                    const empCountResponse = await fetch(`/api/search?company=${company.company_code}&per_page=1`, {
+                        headers: getAuthHeaders()
+                    });
+                    const empData = await empCountResponse.json();
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${company.company_code}</td>
+                        <td>${company.company_name_ara || '-'}</td>
+                        <td>${company.company_name_eng || '-'}</td>
+                        <td>${empData.total || 0}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editCompany('${company.company_code}', \`${company.company_name_ara || ''}\`, \`${company.company_name_eng || ''}\`)">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCompany('${company.company_code}', ${empData.total || 0})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error loading companies:', error);
+                showNotification('خطأ في تحميل بيانات الشركات', 'error');
+            }
+        }
+
+        // تحميل بيانات الوظائف
+        async function loadJobsData() {
+            try {
+                const response = await fetch('/api/jobs', {
+                    headers: getAuthHeaders()
+                });
+                const jobs = await response.json();
+                
+                const tbody = document.getElementById('jobsTableBody');
+                tbody.innerHTML = '';
+                
+                for (const job of jobs) {
+                    // حساب عدد الموظفين
+                    const empCountResponse = await fetch(`/api/search?job=${job.job_code}&per_page=1`, {
+                        headers: getAuthHeaders()
+                    });
+                    const empData = await empCountResponse.json();
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${job.job_code}</td>
+                        <td>${job.job_ara || '-'}</td>
+                        <td>${job.job_eng || '-'}</td>
+                        <td>${empData.total || 0}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editJob('${job.job_code}', \`${job.job_ara || ''}\`, \`${job.job_eng || ''}\`)">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteJob('${job.job_code}', ${empData.total || 0})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error loading jobs:', error);
+                showNotification('خطأ في تحميل بيانات الوظائف', 'error');
+            }
+        }
+
+        // تعديل شركة
+        function editCompany(code, nameAra, nameEng) {
+            document.getElementById('editCompanyCode').value = code;
+            document.getElementById('editCompanyNameAra').value = nameAra;
+            document.getElementById('editCompanyNameEng').value = nameEng;
+            
+            const editModal = new bootstrap.Modal(document.getElementById('editCompanyModal'));
+            editModal.show();
+        }
+
+        // حفظ تعديل الشركة
+        async function saveCompanyEdit() {
+            try {
+                const code = document.getElementById('editCompanyCode').value;
+                const nameAra = document.getElementById('editCompanyNameAra').value.trim();
+                const nameEng = document.getElementById('editCompanyNameEng').value.trim();
+                
+                if (!nameAra || !nameEng) {
+                    showNotification('يرجى ملء جميع الحقول المطلوبة', 'warning');
+                    return;
+                }
+                
+                const response = await fetch(`/api/companies/${code}`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        company_name_ara: nameAra,
+                        company_name_eng: nameEng
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('تم تعديل الشركة بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('editCompanyModal')).hide();
+                    loadCompaniesData();
+                    loadCompaniesAndJobs(); // تحديث القوائم المنسدلة
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'خطأ في تعديل الشركة', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating company:', error);
+                showNotification('خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+
+        // حذف شركة
+        async function deleteCompany(code, employeeCount) {
+            if (employeeCount > 0) {
+                showNotification('لا يمكن حذف الشركة لأنها تحتوي على ' + employeeCount + ' موظف', 'warning');
+                return;
+            }
+            
+            if (confirm('هل أنت متأكد من حذف هذه الشركة؟')) {
+                try {
+                    const response = await fetch(`/api/companies/${code}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        showNotification('تم حذف الشركة بنجاح', 'success');
+                        loadCompaniesData();
+                        loadCompaniesAndJobs(); // تحديث القوائم المنسدلة
+                    } else {
+                        const error = await response.json();
+                        showNotification(error.error || 'خطأ في حذف الشركة', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting company:', error);
+                    showNotification('خطأ في الاتصال بالخادم', 'error');
+                }
+            }
+        }
+
+        // تعديل وظيفة
+        function editJob(code, jobAra, jobEng) {
+            document.getElementById('editJobCode').value = code;
+            document.getElementById('editJobAra').value = jobAra;
+            document.getElementById('editJobEng').value = jobEng;
+            
+            const editModal = new bootstrap.Modal(document.getElementById('editJobModal'));
+            editModal.show();
+        }
+
+        // حفظ تعديل الوظيفة
+        async function saveJobEdit() {
+            try {
+                const code = document.getElementById('editJobCode').value;
+                const jobAra = document.getElementById('editJobAra').value.trim();
+                const jobEng = document.getElementById('editJobEng').value.trim();
+                
+                if (!jobAra || !jobEng) {
+                    showNotification('يرجى ملء جميع الحقول المطلوبة', 'warning');
+                    return;
+                }
+                
+                const response = await fetch(`/api/jobs/${code}`, {
+                    method: 'PUT',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        job_ara: jobAra,
+                        job_eng: jobEng
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('تم تعديل الوظيفة بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('editJobModal')).hide();
+                    loadJobsData();
+                    loadCompaniesAndJobs(); // تحديث القوائم المنسدلة
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'خطأ في تعديل الوظيفة', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating job:', error);
+                showNotification('خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+
+        // حذف وظيفة
+        async function deleteJob(code, employeeCount) {
+            if (employeeCount > 0) {
+                showNotification('لا يمكن حذف الوظيفة لأنها تحتوي على ' + employeeCount + ' موظف', 'warning');
+                return;
+            }
+            
+            if (confirm('هل أنت متأكد من حذف هذه الوظيفة؟')) {
+                try {
+                    const response = await fetch(`/api/jobs/${code}`, {
+                        method: 'DELETE',
+                        headers: getAuthHeaders()
+                    });
+                    
+                    if (response.ok) {
+                        showNotification('تم حذف الوظيفة بنجاح', 'success');
+                        loadJobsData();
+                        loadCompaniesAndJobs(); // تحديث القوائم المنسدلة
+                    } else {
+                        const error = await response.json();
+                        showNotification(error.error || 'خطأ في حذف الوظيفة', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting job:', error);
+                    showNotification('خطأ في الاتصال بالخادم', 'error');
+                }
+            }
+        }
+
+        // إضافة شركة جديدة من modal الإدارة
+        function addNewCompanyInModal() {
+            bootstrap.Modal.getInstance(document.getElementById('managementModal')).hide();
+            setTimeout(() => {
+                const addCompanyModal = new bootstrap.Modal(document.getElementById('addCompanyModal'));
+                addCompanyModal.show();
+                
+                // عند إغلاق modal إضافة الشركة، العودة إلى modal الإدارة
+                document.getElementById('addCompanyModal').addEventListener('hidden.bs.modal', function() {
+                    setTimeout(() => {
+                        const managementModal = new bootstrap.Modal(document.getElementById('managementModal'));
+                        managementModal.show();
+                        loadCompaniesData(); // تحديث البيانات
+                    }, 300);
+                }, { once: true });
+            }, 300);
+        }
+
+        // إضافة وظيفة جديدة من modal الإدارة
+        function addNewJobInModal() {
+            bootstrap.Modal.getInstance(document.getElementById('managementModal')).hide();
+            setTimeout(() => {
+                const addJobModal = new bootstrap.Modal(document.getElementById('addJobModal'));
+                addJobModal.show();
+                
+                // عند إغلاق modal إضافة الوظيفة، العودة إلى modal الإدارة
+                document.getElementById('addJobModal').addEventListener('hidden.bs.modal', function() {
+                    setTimeout(() => {
+                        const managementModal = new bootstrap.Modal(document.getElementById('managementModal'));
+                        managementModal.show();
+                        loadJobsData(); // تحديث البيانات
+                    }, 300);
+                }, { once: true });
+            }, 300);
+        }
     </script>
     
     <!-- Toastify JS -->

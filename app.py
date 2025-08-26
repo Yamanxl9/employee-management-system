@@ -6,6 +6,7 @@ import io
 import os
 import json
 import jwt
+import re
 from functools import wraps
 from dotenv import load_dotenv
 from nationalities import NATIONALITIES
@@ -778,6 +779,67 @@ def add_new_job():
         logger.error(f"Error adding new job: {e}")
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
+# API لتعديل وظيفة
+@app.route('/api/jobs/<int:job_code>', methods=['PUT'])
+@require_auth
+def update_job(job_code):
+    """تعديل بيانات وظيفة"""
+    try:
+        data = request.get_json()
+        job_ara = data.get('job_ara', '').strip()
+        job_eng = data.get('job_eng', '').strip()
+        
+        if not job_ara or not job_eng:
+            return jsonify({'error': 'اسم الوظيفة بالعربية والإنجليزية مطلوب'}), 400
+        
+        # تحديث الوظيفة
+        result = mongo.db.jobs.update_one(
+            {'job_code': job_code},
+            {'$set': {
+                'job_ara': job_ara,
+                'job_eng': job_eng,
+                'updated_at': datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({'error': 'الوظيفة غير موجودة'}), 404
+        
+        log_activity('UPDATE_JOB', f'Updated job: {job_ara} / {job_eng} ({job_code})')
+        return jsonify({
+            'job_code': job_code,
+            'job_ara': job_ara,
+            'job_eng': job_eng
+        })
+            
+    except Exception as e:
+        logger.error(f"Error updating job: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
+# API لحذف وظيفة
+@app.route('/api/jobs/<int:job_code>', methods=['DELETE'])
+@require_auth
+def delete_job(job_code):
+    """حذف وظيفة"""
+    try:
+        # التحقق من وجود موظفين يستخدمون هذه الوظيفة
+        employees_count = mongo.db.employees.count_documents({'job_code': job_code})
+        if employees_count > 0:
+            return jsonify({'error': f'لا يمكن حذف الوظيفة. يوجد {employees_count} موظف مرتبط بهذه الوظيفة'}), 400
+        
+        # حذف الوظيفة
+        result = mongo.db.jobs.delete_one({'job_code': job_code})
+        
+        if result.deleted_count == 0:
+            return jsonify({'error': 'الوظيفة غير موجودة'}), 404
+        
+        log_activity('DELETE_JOB', f'Deleted job: {job_code}')
+        return jsonify({'message': 'تم حذف الوظيفة بنجاح'})
+            
+    except Exception as e:
+        logger.error(f"Error deleting job: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
 # API لإضافة شركة جديدة
 @app.route('/api/companies', methods=['POST'])
 @require_auth
@@ -830,6 +892,67 @@ def add_new_company():
             
     except Exception as e:
         logger.error(f"Error adding new company: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
+# API لتعديل شركة
+@app.route('/api/companies/<company_code>', methods=['PUT'])
+@require_auth
+def update_company(company_code):
+    """تعديل بيانات شركة"""
+    try:
+        data = request.get_json()
+        company_name_ara = data.get('company_name_ara', '').strip()
+        company_name_eng = data.get('company_name_eng', '').strip()
+        
+        if not company_name_ara or not company_name_eng:
+            return jsonify({'error': 'اسم الشركة بالعربية والإنجليزية مطلوب'}), 400
+        
+        # تحديث الشركة
+        result = mongo.db.companies.update_one(
+            {'company_code': company_code},
+            {'$set': {
+                'company_name_ara': company_name_ara,
+                'company_name_eng': company_name_eng,
+                'updated_at': datetime.now(timezone.utc)
+            }}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({'error': 'الشركة غير موجودة'}), 404
+        
+        log_activity('UPDATE_COMPANY', f'Updated company: {company_name_ara} / {company_name_eng} ({company_code})')
+        return jsonify({
+            'company_code': company_code,
+            'company_name_ara': company_name_ara,
+            'company_name_eng': company_name_eng
+        })
+            
+    except Exception as e:
+        logger.error(f"Error updating company: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
+# API لحذف شركة
+@app.route('/api/companies/<company_code>', methods=['DELETE'])
+@require_auth
+def delete_company(company_code):
+    """حذف شركة"""
+    try:
+        # التحقق من وجود موظفين يستخدمون هذه الشركة
+        employees_count = mongo.db.employees.count_documents({'company_code': company_code})
+        if employees_count > 0:
+            return jsonify({'error': f'لا يمكن حذف الشركة. يوجد {employees_count} موظف مرتبط بهذه الشركة'}), 400
+        
+        # حذف الشركة
+        result = mongo.db.companies.delete_one({'company_code': company_code})
+        
+        if result.deleted_count == 0:
+            return jsonify({'error': 'الشركة غير موجودة'}), 404
+        
+        log_activity('DELETE_COMPANY', f'Deleted company: {company_code}')
+        return jsonify({'message': 'تم حذف الشركة بنجاح'})
+            
+    except Exception as e:
+        logger.error(f"Error deleting company: {e}")
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/test')
@@ -981,6 +1104,156 @@ def employees_summary():
     })
 
 # API تصدير النتائج المفلترة
+@app.route('/api/get-detailed-results', methods=['POST'])
+@require_auth
+def get_detailed_results():
+    """جلب النتائج التفصيلية للتصدير"""
+    try:
+        data = request.get_json()
+        
+        # معايير البحث
+        query = data.get('query', '').strip()
+        nationality = data.get('nationality', '')
+        company = data.get('company', '')
+        job = data.get('job', '')
+        passport_status = data.get('passport_status', '')
+        card_status = data.get('card_status', '')
+        
+        # بناء استعلام البحث (نفس المنطق من API البحث الأساسي)
+        filter_query = {}
+        
+        if query:
+            regex_pattern = '.*' + re.escape(query) + '.*'
+            filter_query['$or'] = [
+                {'staff_name': {'$regex': regex_pattern, '$options': 'i'}},
+                {'staff_name_ara': {'$regex': regex_pattern, '$options': 'i'}},
+                {'staff_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'pass_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'card_no': {'$regex': regex_pattern, '$options': 'i'}}
+            ]
+        
+        if nationality:
+            filter_query['nationality_code'] = nationality
+        
+        if company:
+            filter_query['company_code'] = company
+            
+        if job:
+            filter_query['job_code'] = job
+        
+        # فلترة حالة الجواز
+        if passport_status == 'available':
+            filter_query['pass_no'] = {'$exists': True, '$ne': None, '$ne': ''}
+        elif passport_status == 'missing':
+            filter_query['$or'] = [
+                {'pass_no': {'$exists': False}},
+                {'pass_no': None},
+                {'pass_no': ''}
+            ]
+        
+        # فلترة حالة البطاقة
+        if card_status == 'valid':
+            current_date = datetime.now(timezone.utc)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'card_expiry_date': {'$gte': current_date + timedelta(days=90)}
+            })
+        elif card_status == 'expiring':
+            current_date = datetime.now(timezone.utc)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'card_expiry_date': {
+                    '$gte': current_date,
+                    '$lt': current_date + timedelta(days=90)
+                }
+            })
+        elif card_status == 'expired':
+            current_date = datetime.now(timezone.utc)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'card_expiry_date': {'$lt': current_date}
+            })
+        elif card_status == 'missing':
+            filter_query['$or'] = [
+                {'card_no': {'$exists': False}},
+                {'card_no': None},
+                {'card_no': ''}
+            ]
+        elif card_status == 'no_expiry':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                '$or': [{'card_expiry_date': {'$exists': False}}, {'card_expiry_date': None}]
+            })
+        
+        # جلب جميع البيانات التفصيلية
+        employees = list(mongo.db.employees.find(filter_query))
+        
+        # معالجة البيانات وإضافة نصوص الحالة
+        detailed_results = []
+        for emp in employees:
+            # حالة الجواز
+            if emp.get('pass_no'):
+                passport_text = 'متوفر'
+            else:
+                passport_text = 'غير متوفر'
+            
+            # حالة البطاقة  
+            if not emp.get('card_no'):
+                card_text = 'مفقودة'
+            elif not emp.get('card_expiry_date'):
+                card_text = 'بدون تاريخ انتهاء'
+            else:
+                expiry_date = emp['card_expiry_date']
+                if isinstance(expiry_date, str):
+                    expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+                
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                
+                current_date = datetime.now(timezone.utc)
+                if expiry_date < current_date:
+                    card_text = 'منتهية'
+                elif expiry_date < current_date + timedelta(days=90):
+                    card_text = 'تنتهي قريباً'
+                else:
+                    card_text = 'سارية'
+            
+            # إضافة البيانات مع النصوص
+            emp_data = emp.copy()
+            emp_data['passport_text'] = passport_text
+            emp_data['card_text'] = card_text
+            
+            # تنسيق التواريخ
+            if emp_data.get('card_expiry_date'):
+                if isinstance(emp_data['card_expiry_date'], datetime):
+                    emp_data['card_expiry_date'] = emp_data['card_expiry_date'].strftime('%Y-%m-%d')
+            
+            if emp_data.get('emirates_id_expiry'):
+                if isinstance(emp_data['emirates_id_expiry'], datetime):
+                    emp_data['emirates_id_expiry'] = emp_data['emirates_id_expiry'].strftime('%Y-%m-%d')
+                    
+            if emp_data.get('residence_issue_date'):
+                if isinstance(emp_data['residence_issue_date'], datetime):
+                    emp_data['residence_issue_date'] = emp_data['residence_issue_date'].strftime('%Y-%m-%d')
+                    
+            if emp_data.get('residence_expiry_date'):
+                if isinstance(emp_data['residence_expiry_date'], datetime):
+                    emp_data['residence_expiry_date'] = emp_data['residence_expiry_date'].strftime('%Y-%m-%d')
+            
+            detailed_results.append(emp_data)
+        
+        return jsonify({
+            'employees': detailed_results,
+            'total': len(detailed_results)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/export-filtered-results', methods=['POST'])
 @require_auth
 def export_filtered_results():
@@ -1013,6 +1286,11 @@ def export_filtered_results():
                 'رقم البطاقة': emp.get('card_no', 'غير متوفرة'),
                 'حالة البطاقة': emp.get('card_text', ''),
                 'تاريخ انتهاء البطاقة': emp.get('card_expiry_date', 'غير محدد'),
+                'رقم الهوية الإماراتية': emp.get('emirates_id', 'غير متوفر'),
+                'تاريخ انتهاء الهوية': emp.get('emirates_id_expiry', 'غير محدد'),
+                'رقم الإقامة': emp.get('residence_no', 'غير متوفر'),
+                'تاريخ إصدار الإقامة': emp.get('residence_issue_date', 'غير محدد'),
+                'تاريخ انتهاء الإقامة': emp.get('residence_expiry_date', 'غير محدد'),
                 'تاريخ الإنشاء': emp.get('create_date_time', '')
             })
         
@@ -1034,7 +1312,7 @@ def export_filtered_results():
                 from openpyxl.utils import get_column_letter
                 
                 # إضافة عنوان رئيسي للتقرير
-                worksheet.merge_cells('A1:L2')
+                worksheet.merge_cells('A1:Q2')  # تعديل النطاق ليشمل الأعمدة الجديدة
                 title_cell = worksheet['A1']
                 title_cell.value = f"تقرير بيانات الموظفين - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
                 title_cell.font = Font(name='Calibri', size=16, bold=True, color='FFFFFF')

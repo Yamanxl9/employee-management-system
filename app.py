@@ -1206,8 +1206,10 @@ def get_detailed_results():
         job = data.get('job', '')
         passport_status = data.get('passport_status', '')
         card_status = data.get('card_status', '')
+        emirates_id_status = data.get('emirates_id_status', '')
+        residence_status = data.get('residence_status', '')
         
-        logger.info(f"Detailed search request: query='{query}', nationality='{nationality}', company='{company}', job='{job}', passport_status='{passport_status}', card_status='{card_status}'")
+        logger.info(f"Detailed search request: query='{query}', nationality='{nationality}', company='{company}', job='{job}', passport_status='{passport_status}', card_status='{card_status}', emirates_id_status='{emirates_id_status}', residence_status='{residence_status}'")
         
         # بناء استعلام البحث (نفس المنطق من API البحث الأساسي)
         filter_query = {}
@@ -1219,7 +1221,9 @@ def get_detailed_results():
                 {'staff_name_ara': {'$regex': regex_pattern, '$options': 'i'}},
                 {'staff_no': {'$regex': regex_pattern, '$options': 'i'}},
                 {'pass_no': {'$regex': regex_pattern, '$options': 'i'}},
-                {'card_no': {'$regex': regex_pattern, '$options': 'i'}}
+                {'card_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'emirates_id': {'$regex': regex_pattern, '$options': 'i'}},
+                {'residence_no': {'$regex': regex_pattern, '$options': 'i'}}
             ]
         
         if nationality:
@@ -1303,6 +1307,68 @@ def get_detailed_results():
             filter_query['$and'].append({
                 'card_no': {'$exists': True, '$ne': None, '$ne': ''},
                 '$or': [{'card_expiry_date': {'$exists': False}}, {'card_expiry_date': None}]
+            })
+        
+        # إضافة فلاتر حالة الهوية الإماراتية
+        if emirates_id_status == 'missing':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({'$or': [{'emirates_id': {'$exists': False}}, {'emirates_id': None}, {'emirates_id': ''}]})
+        elif emirates_id_status == 'expired':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+                'emirates_id_expiry': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+            })
+        elif emirates_id_status == 'expiring_soon':
+            future_date = datetime.now() + timedelta(days=90)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+                'emirates_id_expiry': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+            })
+        elif emirates_id_status == 'valid':
+            future_date = datetime.now() + timedelta(days=90)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+                'emirates_id_expiry': {'$exists': True, '$ne': None, '$gte': future_date}
+            })
+        elif emirates_id_status == 'no_expiry':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+                '$or': [{'emirates_id_expiry': {'$exists': False}}, {'emirates_id_expiry': None}]
+            })
+        
+        # إضافة فلاتر حالة الإقامة
+        if residence_status == 'missing':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({'$or': [{'residence_no': {'$exists': False}}, {'residence_no': None}, {'residence_no': ''}]})
+        elif residence_status == 'expired':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'residence_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+            })
+        elif residence_status == 'expiring_soon':
+            future_date = datetime.now() + timedelta(days=90)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'residence_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+            })
+        elif residence_status == 'valid':
+            future_date = datetime.now() + timedelta(days=90)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'residence_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
+            })
+        elif residence_status == 'no_expiry':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+                '$or': [{'residence_expiry_date': {'$exists': False}}, {'residence_expiry_date': None}]
             })
         
         # جلب جميع البيانات التفصيلية

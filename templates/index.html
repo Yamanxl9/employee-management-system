@@ -644,7 +644,7 @@
                 
                 <div class="row mb-4">
                     <div class="col-md-12 mb-3">
-                        <label class="form-label fw-bold" id="searchLabel">Quick Search (Name, Employee No., Passport No.)</label>
+                        <label class="form-label fw-bold" id="searchLabel">Quick Search (Name, Employee No., Passport No., Emirates ID, Residence No.)</label>
                         <input type="text" class="form-control form-control-lg" id="searchQuery" 
                                placeholder="Start typing to search automatically..." 
                                style="border-radius: 25px; border: 2px solid #e9ecef; padding: 12px 20px;">
@@ -688,6 +688,31 @@
                             <option value="expired" id="cardExpiredOption">Expired</option>
                             <option value="no_expiry" id="cardNoExpiryOption">No Expiry Date</option>
                             <option value="missing" id="cardMissingOption">Missing</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold" id="emiratesIdStatusLabel">Emirates ID Status</label>
+                        <select class="form-select" id="emiratesIdStatusFilter" style="border-radius: 15px;">
+                            <option value="" id="allEmiratesIdStatusOption">All Status</option>
+                            <option value="valid" id="emiratesIdValidOption">Valid</option>
+                            <option value="expiring_soon" id="emiratesIdExpiringSoonOption">Expiring Soon</option>
+                            <option value="expired" id="emiratesIdExpiredOption">Expired</option>
+                            <option value="no_expiry" id="emiratesIdNoExpiryOption">No Expiry Date</option>
+                            <option value="missing" id="emiratesIdMissingOption">Missing</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold" id="residenceStatusLabel">Residence Status</label>
+                        <select class="form-select" id="residenceStatusFilter" style="border-radius: 15px;">
+                            <option value="" id="allResidenceStatusOption">All Status</option>
+                            <option value="valid" id="residenceValidOption">Valid</option>
+                            <option value="expiring_soon" id="residenceExpiringSoonOption">Expiring Soon</option>
+                            <option value="expired" id="residenceExpiredOption">Expired</option>
+                            <option value="no_expiry" id="residenceNoExpiryOption">No Expiry Date</option>
+                            <option value="missing" id="residenceMissingOption">Missing</option>
                         </select>
                     </div>
                 </div>
@@ -1326,12 +1351,14 @@
                 cardsExpiredText: 'بطاقات منتهية',
                 searchTitle: 'الفلاتر والتحكم',
                 addEmployeeBtn: 'إضافة موظف جديد',
-                searchLabel: 'البحث السريع (الاسم، رقم الموظف، رقم الجواز)',
+                searchLabel: 'البحث السريع (الاسم، رقم الموظف، رقم الجواز، الهوية، رقم الإقامة)',
                 nationalityLabel: 'الجنسية',
                 companyLabel: 'الشركة',
                 jobLabel: 'الوظيفة',
                 passportStatusLabel: 'حالة الجواز',
                 cardStatusLabel: 'حالة البطاقة',
+                emiratesIdStatusLabel: 'حالة الهوية الإماراتية',
+                residenceStatusLabel: 'حالة الإقامة',
                 clearBtn: 'إعادة تعيين',
                 viewModeText: 'عرض مختصر',
                 summaryViewText: 'عرض تفصيلي',
@@ -1355,6 +1382,18 @@
                 cardExpiredOption: 'منتهية',
                 cardNoExpiryOption: 'بدون تاريخ انتهاء',
                 cardMissingOption: 'غير متوفرة',
+                allEmiratesIdStatusOption: 'جميع الحالات',
+                emiratesIdValidOption: 'سارية',
+                emiratesIdExpiringSoonOption: 'تنتهي قريباً',
+                emiratesIdExpiredOption: 'منتهية',
+                emiratesIdNoExpiryOption: 'بدون تاريخ انتهاء',
+                emiratesIdMissingOption: 'غير متوفرة',
+                allResidenceStatusOption: 'جميع الحالات',
+                residenceValidOption: 'سارية',
+                residenceExpiringSoonOption: 'تنتهي قريباً',
+                residenceExpiredOption: 'منتهية',
+                residenceNoExpiryOption: 'بدون تاريخ انتهاء',
+                residenceMissingOption: 'غير متوفرة',
                 loadingText: 'جاري التحميل...',
                 searchingText: 'جاري البحث...',
                 modalTitle: 'إضافة موظف جديد',
@@ -1397,12 +1436,14 @@
                 cardsExpiredText: 'Expired Cards',
                 searchTitle: 'Filters & Control',
                 addEmployeeBtn: 'Add New Employee',
-                searchLabel: 'Quick Search (Name, Employee No., Passport No.)',
+                searchLabel: 'Quick Search (Name, Employee No., Passport No., Emirates ID, Residence No.)',
                 nationalityLabel: 'Nationality',
                 companyLabel: 'Company',
                 jobLabel: 'Job',
                 passportStatusLabel: 'Passport Status',
                 cardStatusLabel: 'Card Status',
+                emiratesIdStatusLabel: 'Emirates ID Status',
+                residenceStatusLabel: 'Residence Status',
                 clearBtn: 'Reset',
                 viewModeText: 'Summary View',
                 summaryViewText: 'Detailed View',
@@ -1486,9 +1527,41 @@
             document.getElementById('jobFilter').addEventListener('change', searchEmployees);
             document.getElementById('passportStatusFilter').addEventListener('change', searchEmployees);
             document.getElementById('cardStatusFilter').addEventListener('change', searchEmployees);
+            document.getElementById('emiratesIdStatusFilter').addEventListener('change', searchEmployees);
+            document.getElementById('residenceStatusFilter').addEventListener('change', searchEmployees);
+            
+            // تحديد النصوص للفلاتر الجديدة إذا لم تكن موجودة
+            if (!document.getElementById('allEmiratesIdStatusOption').textContent) {
+                updateNewFilterTexts();
+            }
             
             // إعداد نظام اقتراحات الوظائف
             setupJobAutocomplete();
+        }
+
+        // دالة تحديث نصوص الفلاتر الجديدة
+        function updateNewFilterTexts() {
+            const isArabic = currentLanguage === 'ar';
+            
+            // نصوص الهوية الإماراتية
+            document.getElementById('allEmiratesIdStatusOption').textContent = isArabic ? 'جميع الحالات' : 'All Status';
+            document.getElementById('emiratesIdValidOption').textContent = isArabic ? 'سارية' : 'Valid';
+            document.getElementById('emiratesIdExpiringSoonOption').textContent = isArabic ? 'تنتهي قريباً' : 'Expiring Soon';
+            document.getElementById('emiratesIdExpiredOption').textContent = isArabic ? 'منتهية' : 'Expired';
+            document.getElementById('emiratesIdNoExpiryOption').textContent = isArabic ? 'بدون تاريخ انتهاء' : 'No Expiry Date';
+            document.getElementById('emiratesIdMissingOption').textContent = isArabic ? 'غير متوفرة' : 'Missing';
+            
+            // نصوص الإقامة
+            document.getElementById('allResidenceStatusOption').textContent = isArabic ? 'جميع الحالات' : 'All Status';
+            document.getElementById('residenceValidOption').textContent = isArabic ? 'سارية' : 'Valid';
+            document.getElementById('residenceExpiringSoonOption').textContent = isArabic ? 'تنتهي قريباً' : 'Expiring Soon';
+            document.getElementById('residenceExpiredOption').textContent = isArabic ? 'منتهية' : 'Expired';
+            document.getElementById('residenceNoExpiryOption').textContent = isArabic ? 'بدون تاريخ انتهاء' : 'No Expiry Date';
+            document.getElementById('residenceMissingOption').textContent = isArabic ? 'غير متوفرة' : 'Missing';
+            
+            // نصوص العلامات للفلاتر
+            document.getElementById('emiratesIdStatusLabel').textContent = isArabic ? 'حالة الهوية الإماراتية' : 'Emirates ID Status';
+            document.getElementById('residenceStatusLabel').textContent = isArabic ? 'حالة الإقامة' : 'Residence Status';
         }
 
         // اختبار الاتصال بالخادم
@@ -1667,6 +1740,10 @@
                 safeUpdateText('confirmDeleteBtn', t.confirmDeleteBtn);
                 
                 console.log('✅ Language update completed successfully!');
+                
+                // تحديث نصوص الفلاتر الجديدة
+                updateNewFilterTexts();
+                
             } catch (error) {
                 console.error('❌ Critical error in updateLanguage:', error);
                 // لا تتوقف - استمر في تنفيذ باقي الكود
@@ -2221,6 +2298,8 @@
                     job: document.getElementById('jobFilter').value,
                     passport_status: document.getElementById('passportStatusFilter').value,
                     card_status: document.getElementById('cardStatusFilter').value,
+                    emirates_id_status: document.getElementById('emiratesIdStatusFilter').value,
+                    residence_status: document.getElementById('residenceStatusFilter').value,
                     page: currentPage,
                     per_page: isDetailedView ? 20 : 50
                 });
@@ -3034,7 +3113,9 @@
                     company: document.getElementById('companyFilter').value,
                     job: document.getElementById('jobFilter').value,
                     passport_status: document.getElementById('passportStatusFilter').value,
-                    card_status: document.getElementById('cardStatusFilter').value
+                    card_status: document.getElementById('cardStatusFilter').value,
+                    emirates_id_status: document.getElementById('emiratesIdStatusFilter').value,
+                    residence_status: document.getElementById('residenceStatusFilter').value
                 };
 
                 // إرسال طلب للحصول على جميع النتائج المفلترة التفصيلية
@@ -3124,6 +3205,8 @@
             document.getElementById('jobFilter').value = '';
             document.getElementById('passportStatusFilter').value = '';
             document.getElementById('cardStatusFilter').value = '';
+            document.getElementById('emiratesIdStatusFilter').value = '';
+            document.getElementById('residenceStatusFilter').value = '';
             
             // مسح النتائج
             const resultsContainer = document.getElementById('resultsContainer');

@@ -258,6 +258,8 @@ def search_employees():
     job = request.args.get('job', '')
     passport_status = request.args.get('passport_status', '')
     card_status = request.args.get('card_status', '')
+    emirates_id_status = request.args.get('emirates_id_status', '')
+    residence_status = request.args.get('residence_status', '')
     page = int(request.args.get('page', 1))
     per_page = int(request.args.get('per_page', 20))
     
@@ -274,6 +276,9 @@ def search_employees():
             {'staff_no': {'$regex': query, '$options': 'i'}},
             {'pass_no': {'$regex': query, '$options': 'i'}},
             {'card_no': {'$regex': query, '$options': 'i'}},
+            # البحث في الهوية الإماراتية ورقم الإقامة
+            {'emirates_id': {'$regex': query, '$options': 'i'}},
+            {'residence_no': {'$regex': query, '$options': 'i'}},
             # البحث في الجنسية
             {'nationality_code': {'$regex': query, '$options': 'i'}}
         ]
@@ -394,6 +399,68 @@ def search_employees():
     
     # حساب pagination
     skip = (page - 1) * per_page
+    
+    # إضافة فلاتر حالة الهوية الإماراتية
+    if emirates_id_status == 'missing':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({'$or': [{'emirates_id': {'$exists': False}}, {'emirates_id': None}, {'emirates_id': ''}]})
+    elif emirates_id_status == 'expired':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+            'emirates_id_expiry': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+        })
+    elif emirates_id_status == 'expiring_soon':
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+            'emirates_id_expiry': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+        })
+    elif emirates_id_status == 'valid':
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+            'emirates_id_expiry': {'$exists': True, '$ne': None, '$gte': future_date}
+        })
+    elif emirates_id_status == 'no_expiry':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+            '$or': [{'emirates_id_expiry': {'$exists': False}}, {'emirates_id_expiry': None}]
+        })
+    
+    # إضافة فلاتر حالة الإقامة
+    if residence_status == 'missing':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({'$or': [{'residence_no': {'$exists': False}}, {'residence_no': None}, {'residence_no': ''}]})
+    elif residence_status == 'expired':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'residence_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+        })
+    elif residence_status == 'expiring_soon':
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'residence_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+        })
+    elif residence_status == 'valid':
+        future_date = datetime.now() + timedelta(days=90)
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+            'residence_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
+        })
+    elif residence_status == 'no_expiry':
+        filter_query['$and'] = filter_query.get('$and', [])
+        filter_query['$and'].append({
+            'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
+            '$or': [{'residence_expiry_date': {'$exists': False}}, {'residence_expiry_date': None}]
+        })
     
     employees = list(mongo.db.employees.find(filter_query).skip(skip).limit(per_page))
     total = mongo.db.employees.count_documents(filter_query)

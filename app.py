@@ -728,56 +728,64 @@ def get_filters():  # إزالة @require_auth مؤقتاً
         'jobs': [{'code': j['job_code'], 'name': j['job_ara'], 'name_ara': j['job_ara'], 'name_eng': j.get('job_eng', j['job_ara'])} for j in jobs]
     })
 
-@app.route('/api/jobs', methods=['POST'])
+@app.route('/api/jobs', methods=['GET', 'POST'])
 @require_auth
-def add_new_job():
-    """إضافة وظيفة جديدة"""
-    try:
-        data = request.get_json()
-        job_ara = data.get('job_ara', '').strip()
-        job_eng = data.get('job_eng', '').strip()
-        
-        if not job_ara or not job_eng:
-            return jsonify({'error': 'اسم الوظيفة بالعربية والإنجليزية مطلوب'}), 400
-        
-        # التحقق من عدم وجود الوظيفة مسبقاً
-        existing_job = mongo.db.jobs.find_one({
-            '$or': [
-                {'job_ara': job_ara},
-                {'job_eng': job_eng}
-            ]
-        })
-        
-        if existing_job:
-            return jsonify({'error': 'الوظيفة موجودة مسبقاً'}), 400
-        
-        # إنشاء رقم جديد للوظيفة
-        last_job = mongo.db.jobs.find_one({}, sort=[('job_code', -1)])
-        new_job_code = int(last_job['job_code']) + 1 if last_job else 1
-        
-        # إضافة الوظيفة الجديدة
-        new_job = {
-            'job_code': new_job_code,
-            'job_ara': job_ara,
-            'job_eng': job_eng,
-            'created_at': datetime.now(timezone.utc)
-        }
-        
-        result = mongo.db.jobs.insert_one(new_job)
-        
-        if result.inserted_id:
-            log_activity('ADD_JOB', f'Added new job: {job_ara} / {job_eng}')
-            return jsonify({
+def handle_jobs():
+    """إدارة الوظائف - جلب أو إضافة"""
+    if request.method == 'GET':
+        try:
+            jobs = list(mongo.db.jobs.find({}, {'_id': 0}))
+            return jsonify(jobs)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            job_ara = data.get('job_ara', '').strip()
+            job_eng = data.get('job_eng', '').strip()
+            
+            if not job_ara or not job_eng:
+                return jsonify({'error': 'اسم الوظيفة بالعربية والإنجليزية مطلوب'}), 400
+            
+            # التحقق من عدم وجود الوظيفة مسبقاً
+            existing_job = mongo.db.jobs.find_one({
+                '$or': [
+                    {'job_ara': job_ara},
+                    {'job_eng': job_eng}
+                ]
+            })
+            
+            if existing_job:
+                return jsonify({'error': 'الوظيفة موجودة مسبقاً'}), 400
+            
+            # إنشاء رقم جديد للوظيفة
+            last_job = mongo.db.jobs.find_one({}, sort=[('job_code', -1)])
+            new_job_code = int(last_job['job_code']) + 1 if last_job else 1
+            
+            # إضافة الوظيفة الجديدة
+            new_job = {
                 'job_code': new_job_code,
                 'job_ara': job_ara,
-                'job_eng': job_eng
-            })
-        else:
-            return jsonify({'error': 'فشل في إضافة الوظيفة'}), 500
+                'job_eng': job_eng,
+                'created_at': datetime.now(timezone.utc)
+            }
             
-    except Exception as e:
-        logger.error(f"Error adding new job: {e}")
-        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+            result = mongo.db.jobs.insert_one(new_job)
+            
+            if result.inserted_id:
+                log_activity('ADD_JOB', f'Added new job: {job_ara} / {job_eng}')
+                return jsonify({
+                    'job_code': new_job_code,
+                    'job_ara': job_ara,
+                    'job_eng': job_eng
+                })
+            else:
+                return jsonify({'error': 'فشل في إضافة الوظيفة'}), 500
+                
+        except Exception as e:
+            logger.error(f"Error adding new job: {e}")
+            return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 # API لتعديل وظيفة
 @app.route('/api/jobs/<int:job_code>', methods=['PUT'])
@@ -840,59 +848,67 @@ def delete_job(job_code):
         logger.error(f"Error deleting job: {e}")
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
-# API لإضافة شركة جديدة
-@app.route('/api/companies', methods=['POST'])
+# API لإدارة الشركات
+@app.route('/api/companies', methods=['GET', 'POST'])
 @require_auth
-def add_new_company():
-    """إضافة شركة جديدة"""
-    try:
-        data = request.get_json()
-        company_code = data.get('company_code', '').strip().upper()
-        company_name_ara = data.get('company_name_ara', '').strip()
-        company_name_eng = data.get('company_name_eng', '').strip()
-        
-        if not company_code or not company_name_ara or not company_name_eng:
-            return jsonify({'error': 'جميع بيانات الشركة مطلوبة'}), 400
-        
-        # التحقق من صحة رمز الشركة
-        if not company_code.isalpha():
-            return jsonify({'error': 'رمز الشركة يجب أن يحتوي على حروف فقط'}), 400
-        
-        # التحقق من عدم وجود الشركة مسبقاً
-        existing_company = mongo.db.companies.find_one({
-            '$or': [
-                {'company_code': company_code},
-                {'company_name_ara': company_name_ara},
-                {'company_name_eng': company_name_eng}
-            ]
-        })
-        
-        if existing_company:
-            return jsonify({'error': 'الشركة موجودة مسبقاً'}), 400
-        
-        # إضافة الشركة الجديدة
-        new_company = {
-            'company_code': company_code,
-            'company_name_ara': company_name_ara,
-            'company_name_eng': company_name_eng,
-            'created_at': datetime.now(timezone.utc)
-        }
-        
-        result = mongo.db.companies.insert_one(new_company)
-        
-        if result.inserted_id:
-            log_activity('ADD_COMPANY', f'Added new company: {company_name_ara} / {company_name_eng} ({company_code})')
-            return jsonify({
+def handle_companies():
+    """إدارة الشركات - جلب أو إضافة"""
+    if request.method == 'GET':
+        try:
+            companies = list(mongo.db.companies.find({}, {'_id': 0}))
+            return jsonify(companies)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    
+    elif request.method == 'POST':
+        try:
+            data = request.get_json()
+            company_code = data.get('company_code', '').strip().upper()
+            company_name_ara = data.get('company_name_ara', '').strip()
+            company_name_eng = data.get('company_name_eng', '').strip()
+            
+            if not company_code or not company_name_ara or not company_name_eng:
+                return jsonify({'error': 'جميع بيانات الشركة مطلوبة'}), 400
+            
+            # التحقق من صحة رمز الشركة
+            if not company_code.isalpha():
+                return jsonify({'error': 'رمز الشركة يجب أن يحتوي على حروف فقط'}), 400
+            
+            # التحقق من عدم وجود الشركة مسبقاً
+            existing_company = mongo.db.companies.find_one({
+                '$or': [
+                    {'company_code': company_code},
+                    {'company_name_ara': company_name_ara},
+                    {'company_name_eng': company_name_eng}
+                ]
+            })
+            
+            if existing_company:
+                return jsonify({'error': 'الشركة موجودة مسبقاً'}), 400
+            
+            # إضافة الشركة الجديدة
+            new_company = {
                 'company_code': company_code,
                 'company_name_ara': company_name_ara,
-                'company_name_eng': company_name_eng
-            })
-        else:
-            return jsonify({'error': 'فشل في إضافة الشركة'}), 500
+                'company_name_eng': company_name_eng,
+                'created_at': datetime.now(timezone.utc)
+            }
             
-    except Exception as e:
-        logger.error(f"Error adding new company: {e}")
-        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+            result = mongo.db.companies.insert_one(new_company)
+            
+            if result.inserted_id:
+                log_activity('ADD_COMPANY', f'Added new company: {company_name_ara} / {company_name_eng} ({company_code})')
+                return jsonify({
+                    'company_code': company_code,
+                    'company_name_ara': company_name_ara,
+                    'company_name_eng': company_name_eng
+                })
+            else:
+                return jsonify({'error': 'فشل في إضافة الشركة'}), 500
+                
+        except Exception as e:
+            logger.error(f"Error adding new company: {e}")
+            return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 # API لتعديل شركة
 @app.route('/api/companies/<company_code>', methods=['PUT'])

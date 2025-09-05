@@ -2542,15 +2542,21 @@
                                         <p class="mb-1"><strong>${employee.staff_no}</strong></p>
                                     </div>
                                     <div class="col-sm-6">
-                                        <small class="text-muted">${isArabic ? 'الوظيفة:' : 'Job:'}</small>
-                                        <p class="mb-1">${isArabic ? employee.job_ara : employee.job_eng}</p>
+                                        <small class="text-muted">${isArabic ? 'القسم:' : 'Department:'}</small>
+                                        <p class="mb-1">${employee.department_ara || employee.department_eng || 'غير محدد'}</p>
                                     </div>
                                 </div>
                                 <div class="row">
                                     <div class="col-sm-6">
+                                        <small class="text-muted">${isArabic ? 'الوظيفة:' : 'Job:'}</small>
+                                        <p class="mb-1">${isArabic ? employee.job_ara : employee.job_eng}</p>
+                                    </div>
+                                    <div class="col-sm-6">
                                         <small class="text-muted">${isArabic ? 'الشركة:' : 'Company:'}</small>
                                         <p class="mb-1">${isArabic ? employee.company_ara : employee.company_eng}</p>
                                     </div>
+                                </div>
+                                <div class="row">
                                     <div class="col-sm-6">
                                         <small class="text-muted">${isArabic ? 'الجنسية:' : 'Nationality:'}</small>
                                         <p class="mb-1">${employee.nationality_display || employee.nationality_ar || employee.nationality_en || employee.nationality_code}</p>

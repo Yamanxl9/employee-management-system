@@ -562,13 +562,15 @@ def search_employees():
     employees = list(mongo.db.employees.find(filter_query).skip(skip).limit(per_page))
     total = mongo.db.employees.count_documents(filter_query)
     
-    # إضافة معلومات الشركة والوظيفة والجنسية
+    # إضافة معلومات الشركة والوظيفة والقسم والجنسية
     results = []
     for emp in employees:
         # جلب معلومات الشركة
         company_info = mongo.db.companies.find_one({'company_code': emp.get('company_code')})
         # جلب معلومات الوظيفة
         job_info = mongo.db.jobs.find_one({'job_code': emp.get('job_code')})
+        # جلب معلومات القسم
+        department_info = mongo.db.department.find_one({'department_code': emp.get('department_code')})
         
         emp_dict = serialize_doc(emp)
         emp_dict.update(get_employee_status(emp))
@@ -580,6 +582,10 @@ def search_employees():
         if job_info:
             emp_dict['job_eng'] = job_info.get('job_eng', '')
             emp_dict['job_ara'] = job_info.get('job_ara', '')
+            
+        if department_info:
+            emp_dict['department_eng'] = department_info.get('department_name_eng', '')
+            emp_dict['department_ara'] = department_info.get('department_name_ara', '')
         
         # إضافة اسم الجنسية للعرض (إزالة التكرار)
         nationality_code = emp.get('nationality_code', '')
@@ -1623,14 +1629,16 @@ def export_filtered_results():
         # إعداد البيانات للتصدير
         report_data = []
         for emp in employees:
-            # جلب معلومات الشركة والوظيفة
+            # جلب معلومات الشركة والوظيفة والقسم
             company_info = mongo.db.companies.find_one({'company_code': emp.get('company_code')})
             job_info = mongo.db.jobs.find_one({'job_code': emp.get('job_code')})
+            department_info = mongo.db.department.find_one({'department_code': emp.get('department_code')})
             
             report_data.append({
                 'رقم الموظف': emp.get('staff_no', ''),
                 'الاسم بالعربية': emp.get('staff_name_ara', ''),
                 'الاسم بالإنجليزية': emp.get('staff_name', ''),
+                'القسم': department_info.get('department_name_ara', '') if department_info else '',
                 'الوظيفة': job_info.get('job_ara', '') if job_info else '',
                 'الشركة': company_info.get('company_name_ara', '') if company_info else '',
                 'الجنسية': emp.get('nationality_code', ''),

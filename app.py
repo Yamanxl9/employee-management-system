@@ -187,7 +187,7 @@ def init_sample_departments():
         
     try:
         # التحقق من وجود أقسام
-        departments_count = mongo.db.departments.count_documents({})
+        departments_count = mongo.db.department.count_documents({})
         if departments_count == 0:
             sample_departments = [
                 {
@@ -217,7 +217,7 @@ def init_sample_departments():
                 }
             ]
             
-            mongo.db.departments.insert_many(sample_departments)
+            mongo.db.department.insert_many(sample_departments)
             logger.info("✅ Sample departments created successfully!")
             print("✅ تم إنشاء الأقسام التجريبية بنجاح!")
         else:
@@ -1899,7 +1899,7 @@ def cleanup_audit_logs():
 def get_departments():
     """جلب جميع الأقسام - لا يحتاج مصادقة"""
     try:
-        departments = list(mongo.db.departments.find({}, {'_id': 0}).sort('department_name_ara'))
+        departments = list(mongo.db.department.find({}, {'_id': 0}).sort('department_name_ara'))
         return jsonify(departments)
     except Exception as e:
         logger.error(f"Error fetching departments: {e}")
@@ -1930,7 +1930,7 @@ def get_public_companies():
 def get_public_departments():
     """جلب الأقسام - نسخة عامة بدون مصادقة"""
     try:
-        departments = list(mongo.db.departments.find({}, {'_id': 0}).sort('department_name_ara'))
+        departments = list(mongo.db.department.find({}, {'_id': 0}).sort('department_name_ara'))
         return jsonify(departments)
     except Exception as e:
         logger.error(f"Error fetching public departments: {e}")
@@ -1941,25 +1941,42 @@ def add_department():
     """إضافة قسم جديد - بدون مصادقة للإنتاج"""
     try:
         data = request.get_json()
+        logger.info(f"📥 Received department data: {data}")
         
         # التحقق من البيانات المطلوبة
         if not data.get('department_code') or not data.get('department_name_ara') or not data.get('department_name_eng'):
             return jsonify({'error': 'جميع حقول القسم مطلوبة'}), 400
         
         # التحقق من عدم وجود قسم بنفس الكود
-        existing = mongo.db.departments.find_one({'department_code': data['department_code']})
+        existing = mongo.db.department.find_one({'department_code': data['department_code']})
         if existing:
             return jsonify({'error': 'كود القسم موجود مسبقاً'}), 400
         
-        # إدراج القسم الجديد
-        mongo.db.departments.insert_one(data)
+        # إعداد البيانات للحفظ مع إضافة تاريخ الإنشاء
+        department_data = {
+            'department_code': data.get('department_code').upper(),
+            'department_name_ara': data.get('department_name_ara'),
+            'department_name_eng': data.get('department_name_eng'),
+            'created_at': datetime.now(),
+            'status': 'active'
+        }
+        
+        # إدراج القسم الجديد في collection "department"
+        result = mongo.db.department.insert_one(department_data)
+        
+        logger.info(f"✅ Department saved to MongoDB with ID: {result.inserted_id}")
+        logger.info(f"📊 Department data: {department_data}")
         
         log_activity('إضافة قسم', f'تم إضافة القسم {data.get("department_name_ara", "")} - كود: {data.get("department_code", "")}')
         
-        return jsonify(data), 201
+        # إرجاع البيانات مع معرف قاعدة البيانات
+        response_data = department_data.copy()
+        response_data['_id'] = str(result.inserted_id)
+        
+        return jsonify(response_data), 201
         
     except Exception as e:
-        logger.error(f"Error adding department: {e}")
+        logger.error(f"❌ Error adding department: {e}")
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/departments/<department_code>', methods=['PUT'])
@@ -1969,7 +1986,7 @@ def update_department(department_code):
         data = request.get_json()
         
         # تحديث القسم
-        result = mongo.db.departments.update_one(
+        result = mongo.db.department.update_one(
             {'department_code': department_code},
             {'$set': {
                 'department_name_ara': data.get('department_name_ara'),
@@ -1997,7 +2014,7 @@ def delete_department(department_code):
             return jsonify({'error': f'لا يمكن حذف القسم. يوجد {employees_count} موظف مرتبط بهذا القسم'}), 400
         
         # حذف القسم
-        result = mongo.db.departments.delete_one({'department_code': department_code})
+        result = mongo.db.department.delete_one({'department_code': department_code})
         
         if result.deleted_count == 0:
             return jsonify({'error': 'القسم غير موجود'}), 404
@@ -2070,8 +2087,8 @@ def load_initial_data():
     ]
     
     # حذف البيانات الموجودة وإدراج البيانات الجديدة
-    mongo.db.departments.delete_many({})
-    mongo.db.departments.insert_many(departments_data)
+    mongo.db.department.delete_many({})
+    mongo.db.department.insert_many(departments_data)
     
     print("تم تحميل بيانات الشركات والوظائف والأقسام بنجاح في MongoDB!")
     

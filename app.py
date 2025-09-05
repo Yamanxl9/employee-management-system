@@ -180,6 +180,53 @@ def init_admin_user():
         mongo.db.users.insert_one(admin_data)
         print("تم إنشاء المستخدم الإداري: admin / admin123")
 
+def init_sample_departments():
+    """إنشاء أقسام تجريبية إذا لم تكن موجودة"""
+    if not mongo:
+        return
+        
+    try:
+        # التحقق من وجود أقسام
+        departments_count = mongo.db.departments.count_documents({})
+        if departments_count == 0:
+            sample_departments = [
+                {
+                    'department_code': 'HR',
+                    'department_name_eng': 'Human Resources',
+                    'department_name_ara': 'الموارد البشرية'
+                },
+                {
+                    'department_code': 'IT',
+                    'department_name_eng': 'Information Technology',
+                    'department_name_ara': 'تقنية المعلومات'
+                },
+                {
+                    'department_code': 'FIN',
+                    'department_name_eng': 'Finance',
+                    'department_name_ara': 'المالية'
+                },
+                {
+                    'department_code': 'MKT',
+                    'department_name_eng': 'Marketing',
+                    'department_name_ara': 'التسويق'
+                },
+                {
+                    'department_code': 'OPS',
+                    'department_name_eng': 'Operations',
+                    'department_name_ara': 'العمليات'
+                }
+            ]
+            
+            mongo.db.departments.insert_many(sample_departments)
+            logger.info("✅ Sample departments created successfully!")
+            print("✅ تم إنشاء الأقسام التجريبية بنجاح!")
+        else:
+            logger.info(f"ℹ️ Found {departments_count} existing departments")
+            
+    except Exception as e:
+        logger.error(f"❌ Error creating sample departments: {e}")
+        print(f"❌ خطأ في إنشاء الأقسام التجريبية: {e}")
+
 # API للتحقق من حالة النظام
 @app.route('/api/health')
 def health_check():
@@ -2033,6 +2080,9 @@ def load_initial_data():
     
     # إنشاء المستخدم الإداري
     init_admin_user()
+    
+    # إنشاء الأقسام التجريبية
+    init_sample_departments()
 
 if __name__ == '__main__':
     # تحميل البيانات الأولية

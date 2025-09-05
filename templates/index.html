@@ -3700,8 +3700,15 @@
         // دوال إدارة الأقسام
         async function loadDepartmentsData() {
             try {
-                const response = await fetch('/api/departments');
+                // استخدام الـ endpoint العام بدون مصادقة
+                const response = await fetch('/api/public/departments');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const departments = await response.json();
+                console.log('✅ Loaded departments:', departments);
                 
                 const tbody = document.getElementById('departmentsTableBody');
                 tbody.innerHTML = '';
@@ -3730,7 +3737,10 @@
                     tbody.appendChild(row);
                 }
             } catch (error) {
-                console.error('Error loading departments:', error);
+                console.error('❌ Error loading departments:', error);
+                // عرض رسالة خطأ للمستخدم
+                const tbody = document.getElementById('departmentsTableBody');
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">خطأ في تحميل الأقسام</td></tr>';
             }
         }
 
@@ -3784,10 +3794,13 @@
             
             if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
                 try {
+                    // الحصول على الـ token الصحيح
+                    const authToken = localStorage.getItem('authToken');
+                    
                     const response = await fetch(`/api/departments/${code}`, {
                         method: 'DELETE',
                         headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            'Authorization': `Bearer ${authToken}`
                         }
                     });
                     
@@ -3841,11 +3854,15 @@
             }
             
             try {
+                // الحصول على الـ token الصحيح
+                const authToken = localStorage.getItem('authToken');
+                console.log('🔑 Using token for department creation:', authToken ? 'Token found' : 'No token');
+                
                 const response = await fetch('/api/departments', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${authToken}`
                     },
                     body: JSON.stringify({
                         department_code: departmentCode,
@@ -3853,6 +3870,8 @@
                         department_name_ara: departmentNameAra
                     })
                 });
+                
+                console.log('📡 Department creation response status:', response.status);
                 
                 if (response.ok) {
                     showNotification('تم إضافة القسم بنجاح', 'success');
@@ -3863,21 +3882,26 @@
                     
                     // تحديث القوائم
                     await loadDepartments();
+                    await loadDepartmentsData(); // تحديث جدول الأقسام
                 } else {
                     const error = await response.json();
+                    console.error('❌ Department creation error:', error);
                     showNotification(error.error || 'خطأ في إضافة القسم', 'error');
                 }
             } catch (error) {
-                console.error('Error adding department:', error);
-                showNotification('خطأ في الاتصال بالخادم', 'error');
+                console.error('❌ Network error in department creation:', error);
+                showNotification('خطأ في الشبكة', 'error');
             }
         }
 
         // تحميل الأقسام في القوائم المنسدلة
         async function loadDepartments() {
             try {
-                const response = await fetch('/api/departments');
+                // استخدام الـ endpoint العام بدون مصادقة
+                const response = await fetch('/api/public/departments');
                 const departments = await response.json();
+                
+                console.log('✅ Loaded departments for dropdowns:', departments.length, 'departments');
                 
                 // تحديث فلتر الأقسام
                 const departmentFilter = document.getElementById('departmentFilter');

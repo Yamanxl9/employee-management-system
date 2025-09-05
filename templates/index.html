@@ -652,20 +652,26 @@
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label class="form-label fw-bold" id="nationalityLabel">Nationality</label>
                         <input type="text" class="form-control" id="nationalityFilter" placeholder="Enter nationality..." style="border-radius: 15px;">
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label class="form-label fw-bold" id="companyLabel">Company</label>
                         <select class="form-select" id="companyFilter" style="border-radius: 15px;">
                             <option value="" id="allCompaniesOption">All Companies</option>
                         </select>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-3 mb-3">
                         <label class="form-label fw-bold" id="jobLabel">Job</label>
                         <select class="form-select" id="jobFilter" style="border-radius: 15px;">
                             <option value="" id="allJobsOption">All Jobs</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold" id="departmentLabel">Department</label>
+                        <select class="form-select" id="departmentFilter" style="border-radius: 15px;">
+                            <option value="" id="allDepartmentsOption">All Departments</option>
                         </select>
                     </div>
                 </div>
@@ -801,10 +807,12 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label" id="nationalityCodeLabel">Nationality *</label>
                                 <input type="text" class="form-control" id="nationalityCode" required placeholder="Enter nationality...">
                             </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label" id="companyCodeLabel">Company *</label>
                                 <div class="input-group">
@@ -812,6 +820,17 @@
                                         <option value="" id="selectCompanyOption">Select Company</option>
                                     </select>
                                     <button class="btn btn-outline-success" type="button" onclick="openAddCompanyModal()" title="إضافة شركة جديدة">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" id="departmentCodeLabel">Department</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="departmentCode">
+                                        <option value="" id="selectDepartmentOption">Select Department</option>
+                                    </select>
+                                    <button class="btn btn-outline-success" type="button" onclick="openAddDepartmentModal()" title="إضافة قسم جديد">
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
@@ -967,12 +986,44 @@
         </div>
     </div>
 
+    <!-- Modal إضافة قسم جديد -->
+    <div class="modal fade" id="addDepartmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDepartmentModalTitle">إضافة قسم جديد</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDepartmentForm">
+                        <div class="mb-3">
+                            <label class="form-label" id="departmentCodeInputLabel">Department Code *</label>
+                            <input type="text" class="form-control" id="departmentCodeInput" required placeholder="مثل: HR, IT, FIN">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" id="departmentNameEngLabel">Department Name (English) *</label>
+                            <input type="text" class="form-control" id="departmentNameEng" required placeholder="Human Resources">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" id="departmentNameAraLabel">Department Name (Arabic) *</label>
+                            <input type="text" class="form-control" id="departmentNameAra" required placeholder="الموارد البشرية">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-success" onclick="saveNewDepartment()">حفظ القسم</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal إدارة البيانات -->
     <div class="modal fade" id="managementModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="managementModalTitle">إدارة الشركات والوظائف</h5>
+                    <h5 class="modal-title" id="managementModalTitle">إدارة الشركات والوظائف والأقسام</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -983,6 +1034,9 @@
                         </li>
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="jobs-tab" data-bs-toggle="tab" data-bs-target="#jobs" type="button" role="tab">إدارة الوظائف</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button" role="tab">إدارة الأقسام</button>
                         </li>
                     </ul>
                     
@@ -1038,6 +1092,35 @@
                                             </tr>
                                         </thead>
                                         <tbody id="jobsTableBody">
+                                            <!-- سيتم ملؤها بواسطة JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- تبويب إدارة الأقسام -->
+                        <div class="tab-pane fade" id="departments" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6>قائمة الأقسام</h6>
+                                    <button class="btn btn-primary btn-sm" onclick="addNewDepartmentInModal()">
+                                        <i class="fas fa-plus me-1"></i>
+                                        إضافة قسم
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>كود القسم</th>
+                                                <th>الاسم العربي</th>
+                                                <th>الاسم الإنجليزي</th>
+                                                <th>عدد الموظفين</th>
+                                                <th>الإجراءات</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="departmentsTableBody">
                                             <!-- سيتم ملؤها بواسطة JavaScript -->
                                         </tbody>
                                     </table>
@@ -1103,6 +1186,35 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
                     <button type="button" class="btn btn-success" onclick="saveJobEdit()">حفظ التعديل</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal تعديل القسم -->
+    <div class="modal fade" id="editDepartmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">تعديل القسم</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editDepartmentForm">
+                        <input type="hidden" id="editDepartmentCode">
+                        <div class="mb-3">
+                            <label class="form-label">الاسم العربي *</label>
+                            <input type="text" class="form-control" id="editDepartmentNameAra" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الاسم الإنجليزي *</label>
+                            <input type="text" class="form-control" id="editDepartmentNameEng" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button type="button" class="btn btn-success" onclick="saveDepartmentEdit()">حفظ التعديل</button>
                 </div>
             </div>
         </div>
@@ -1250,6 +1362,7 @@
             loadStatistics();
             loadFilters();
             loadJobs(); // تحميل الوظائف للـ autocomplete
+            loadDepartments(); // تحميل الأقسام
             
             // تحميل الموظفين مع تأخير للتأكد من جاهزية النظام
             setTimeout(() => {
@@ -1290,6 +1403,14 @@
                 nationalityLabel: 'Nationality',
                 companyLabel: 'Company',
                 jobLabel: 'Job',
+                departmentLabel: 'Department',
+                allDepartmentsOption: 'All Departments',
+                departmentCodeLabel: 'Department',
+                selectDepartmentOption: 'Select Department',
+                addDepartmentModalTitle: 'Add New Department',
+                departmentCodeInputLabel: 'Department Code *',
+                departmentNameEngLabel: 'Department Name (English) *',
+                departmentNameAraLabel: 'Department Name (Arabic) *',
                 passportStatusLabel: 'Passport Status',
                 cardStatusLabel: 'Card Status',
                 clearBtn: 'Reset',
@@ -1355,6 +1476,14 @@
                 nationalityLabel: 'الجنسية',
                 companyLabel: 'الشركة',
                 jobLabel: 'الوظيفة',
+                departmentLabel: 'القسم',
+                allDepartmentsOption: 'جميع الأقسام',
+                departmentCodeLabel: 'القسم',
+                selectDepartmentOption: 'اختر القسم',
+                addDepartmentModalTitle: 'إضافة قسم جديد',
+                departmentCodeInputLabel: 'كود القسم *',
+                departmentNameEngLabel: 'اسم القسم (إنجليزي) *',
+                departmentNameAraLabel: 'اسم القسم (عربي) *',
                 passportStatusLabel: 'حالة الجواز',
                 cardStatusLabel: 'حالة البطاقة',
                 emiratesIdStatusLabel: 'حالة الهوية الإماراتية',
@@ -1525,6 +1654,7 @@
             // باقي الفلاتر (select elements)
             document.getElementById('companyFilter').addEventListener('change', searchEmployees);
             document.getElementById('jobFilter').addEventListener('change', searchEmployees);
+            document.getElementById('departmentFilter').addEventListener('change', searchEmployees);
             document.getElementById('passportStatusFilter').addEventListener('change', searchEmployees);
             document.getElementById('cardStatusFilter').addEventListener('change', searchEmployees);
             document.getElementById('emiratesIdStatusFilter').addEventListener('change', searchEmployees);
@@ -1679,6 +1809,14 @@
                 safeUpdateText('nationalityLabel', t.nationalityLabel);
                 safeUpdateText('companyLabel', t.companyLabel);
                 safeUpdateText('jobLabel', t.jobLabel);
+                safeUpdateText('departmentLabel', t.departmentLabel);
+                safeUpdateText('allDepartmentsOption', t.allDepartmentsOption);
+                safeUpdateText('departmentCodeLabel', t.departmentCodeLabel);
+                safeUpdateText('selectDepartmentOption', t.selectDepartmentOption);
+                safeUpdateText('addDepartmentModalTitle', t.addDepartmentModalTitle);
+                safeUpdateText('departmentCodeInputLabel', t.departmentCodeInputLabel);
+                safeUpdateText('departmentNameEngLabel', t.departmentNameEngLabel);
+                safeUpdateText('departmentNameAraLabel', t.departmentNameAraLabel);
                 safeUpdateText('passportStatusLabel', t.passportStatusLabel);
                 safeUpdateText('cardStatusLabel', t.cardStatusLabel);
                 safeUpdateText('emiratesIdStatusLabel', t.emiratesIdStatusLabel);
@@ -2241,6 +2379,7 @@
             document.getElementById('searchQuery').value = '';
             document.getElementById('nationalityFilter').value = '';
             document.getElementById('companyFilter').value = '';
+            document.getElementById('departmentFilter').value = '';
             document.getElementById('passportStatusFilter').value = '';
             document.getElementById('cardStatusFilter').value = '';
             
@@ -2255,6 +2394,7 @@
             document.getElementById('searchQuery').value = '';
             document.getElementById('nationalityFilter').value = '';
             document.getElementById('companyFilter').value = '';
+            document.getElementById('departmentFilter').value = '';
             document.getElementById('cardStatusFilter').value = '';
             
             // تطبيق فلتر الجواز
@@ -2271,6 +2411,7 @@
             document.getElementById('searchQuery').value = '';
             document.getElementById('nationalityFilter').value = '';
             document.getElementById('companyFilter').value = '';
+            document.getElementById('departmentFilter').value = '';
             document.getElementById('passportStatusFilter').value = '';
             
             // تطبيق فلتر البطاقة
@@ -2298,6 +2439,7 @@
                     nationality: document.getElementById('nationalityFilter').value,
                     company: document.getElementById('companyFilter').value,
                     job: document.getElementById('jobFilter').value,
+                    department: document.getElementById('departmentFilter').value,
                     passport_status: document.getElementById('passportStatusFilter').value,
                     card_status: document.getElementById('cardStatusFilter').value,
                     emirates_id_status: document.getElementById('emiratesIdStatusFilter').value,
@@ -2699,6 +2841,7 @@
                 
                 document.getElementById('nationalityCode').value = employee.nationality_code || '';
                 document.getElementById('companyCode').value = employee.company_code || '';
+                document.getElementById('departmentCode').value = employee.department_code || '';
                 document.getElementById('passNo').value = employee.pass_no || '';
                 document.getElementById('cardNo').value = employee.card_no || '';
                 
@@ -2854,6 +2997,7 @@
                 job_code: jobCode,
                 nationality_code: document.getElementById('nationalityCode').value,
                 company_code: document.getElementById('companyCode').value,
+                department_code: document.getElementById('departmentCode').value || null,
                 pass_no: document.getElementById('passNo').value || null,
                 card_no: document.getElementById('cardNo').value || null,
                 card_expiry_date: document.getElementById('cardExpiryDate').value || null,
@@ -3271,6 +3415,7 @@
             const managementModal = new bootstrap.Modal(document.getElementById('managementModal'));
             loadCompaniesData();
             loadJobsData();
+            loadDepartmentsData();
             managementModal.show();
         }
 
@@ -3540,6 +3685,218 @@
                     }, 300);
                 }, { once: true });
             }, 300);
+        }
+
+        // دوال إدارة الأقسام
+        async function loadDepartmentsData() {
+            try {
+                const response = await fetch('/api/departments');
+                const departments = await response.json();
+                
+                const tbody = document.getElementById('departmentsTableBody');
+                tbody.innerHTML = '';
+                
+                for (const dept of departments) {
+                    // حساب عدد الموظفين في هذا القسم
+                    const countResponse = await fetch(`/api/search?department=${dept.department_code}&per_page=1`);
+                    const countData = await countResponse.json();
+                    const employeeCount = countData.total || 0;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${dept.department_code}</td>
+                        <td>${dept.department_name_ara}</td>
+                        <td>${dept.department_name_eng}</td>
+                        <td><span class="badge bg-primary">${employeeCount}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editDepartment('${dept.department_code}', '${dept.department_name_ara}', '${dept.department_name_eng}')" title="تعديل">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteDepartment('${dept.department_code}', ${employeeCount})" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
+        }
+
+        function editDepartment(code, nameAra, nameEng) {
+            document.getElementById('editDepartmentCode').value = code;
+            document.getElementById('editDepartmentNameAra').value = nameAra;
+            document.getElementById('editDepartmentNameEng').value = nameEng;
+            
+            const editModal = new bootstrap.Modal(document.getElementById('editDepartmentModal'));
+            editModal.show();
+        }
+
+        async function saveDepartmentEdit() {
+            const code = document.getElementById('editDepartmentCode').value;
+            const nameAra = document.getElementById('editDepartmentNameAra').value;
+            const nameEng = document.getElementById('editDepartmentNameEng').value;
+            
+            try {
+                const response = await fetch(`/api/departments/${code}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        department_name_ara: nameAra,
+                        department_name_eng: nameEng
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('تم تعديل القسم بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('editDepartmentModal')).hide();
+                    loadDepartmentsData();
+                    loadDepartments(); // تحديث القوائم المنسدلة
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'خطأ في تعديل القسم', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating department:', error);
+                showNotification('خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+
+        async function deleteDepartment(code, employeeCount) {
+            if (employeeCount > 0) {
+                showNotification('لا يمكن حذف القسم لأنه يحتوي على ' + employeeCount + ' موظف', 'warning');
+                return;
+            }
+            
+            if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
+                try {
+                    const response = await fetch(`/api/departments/${code}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        showNotification('تم حذف القسم بنجاح', 'success');
+                        loadDepartmentsData();
+                        loadDepartments(); // تحديث القوائم المنسدلة
+                    } else {
+                        const error = await response.json();
+                        showNotification(error.error || 'خطأ في حذف القسم', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error deleting department:', error);
+                    showNotification('خطأ في الاتصال بالخادم', 'error');
+                }
+            }
+        }
+
+        // إضافة قسم جديد من modal الإدارة
+        function addNewDepartmentInModal() {
+            bootstrap.Modal.getInstance(document.getElementById('managementModal')).hide();
+            setTimeout(() => {
+                const addDepartmentModal = new bootstrap.Modal(document.getElementById('addDepartmentModal'));
+                addDepartmentModal.show();
+                
+                // عند إغلاق modal إضافة القسم، العودة إلى modal الإدارة
+                document.getElementById('addDepartmentModal').addEventListener('hidden.bs.modal', function() {
+                    setTimeout(() => {
+                        const managementModal = new bootstrap.Modal(document.getElementById('managementModal'));
+                        managementModal.show();
+                        loadDepartmentsData(); // تحديث البيانات
+                    }, 300);
+                }, { once: true });
+            }, 300);
+        }
+
+        // دوال إضافة قسم جديد
+        function openAddDepartmentModal() {
+            const addDepartmentModal = new bootstrap.Modal(document.getElementById('addDepartmentModal'));
+            addDepartmentModal.show();
+        }
+
+        async function saveNewDepartment() {
+            const departmentCode = document.getElementById('departmentCodeInput').value.trim().toUpperCase();
+            const departmentNameEng = document.getElementById('departmentNameEng').value.trim();
+            const departmentNameAra = document.getElementById('departmentNameAra').value.trim();
+            
+            if (!departmentCode || !departmentNameEng || !departmentNameAra) {
+                showNotification('جميع الحقول مطلوبة', 'warning');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/departments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        department_code: departmentCode,
+                        department_name_eng: departmentNameEng,
+                        department_name_ara: departmentNameAra
+                    })
+                });
+                
+                if (response.ok) {
+                    showNotification('تم إضافة القسم بنجاح', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('addDepartmentModal')).hide();
+                    
+                    // مسح النموذج
+                    document.getElementById('addDepartmentForm').reset();
+                    
+                    // تحديث القوائم
+                    await loadDepartments();
+                } else {
+                    const error = await response.json();
+                    showNotification(error.error || 'خطأ في إضافة القسم', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding department:', error);
+                showNotification('خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+
+        // تحميل الأقسام في القوائم المنسدلة
+        async function loadDepartments() {
+            try {
+                const response = await fetch('/api/departments');
+                const departments = await response.json();
+                
+                // تحديث فلتر الأقسام
+                const departmentFilter = document.getElementById('departmentFilter');
+                if (departmentFilter) {
+                    departmentFilter.innerHTML = '<option value="">جميع الأقسام</option>';
+                    departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.department_code;
+                        option.textContent = `${dept.department_name_ara} (${dept.department_code})`;
+                        departmentFilter.appendChild(option);
+                    });
+                }
+                
+                // تحديث قائمة الأقسام في نموذج إضافة الموظف
+                const departmentCode = document.getElementById('departmentCode');
+                if (departmentCode) {
+                    const currentValue = departmentCode.value;
+                    departmentCode.innerHTML = '<option value="">اختر القسم</option>';
+                    departments.forEach(dept => {
+                        const option = document.createElement('option');
+                        option.value = dept.department_code;
+                        option.textContent = `${dept.department_name_ara} (${dept.department_code})`;
+                        departmentCode.appendChild(option);
+                    });
+                    departmentCode.value = currentValue;
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
         }
     </script>
     

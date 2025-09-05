@@ -256,6 +256,7 @@ def search_employees():
     nationality = request.args.get('nationality', '')
     company = request.args.get('company', '')
     job = request.args.get('job', '')
+    department = request.args.get('department', '')
     passport_status = request.args.get('passport_status', '')
     card_status = request.args.get('card_status', '')
     emirates_id_status = request.args.get('emirates_id_status', '')
@@ -355,6 +356,9 @@ def search_employees():
             filter_query['job_code'] = int(job)
         except (ValueError, TypeError):
             pass  # تجاهل القيم غير الصحيحة
+    
+    if department:
+        filter_query['department_code'] = {'$regex': department, '$options': 'i'}
     
     # إضافة فلاتر حالة الجواز والبطاقة لقاعدة البيانات مباشرة
     if passport_status == 'missing':
@@ -695,9 +699,8 @@ def get_employee(staff_no):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# API للإحصائيات
+# API للإحصائيات - بدون مصادقة
 @app.route('/api/statistics')
-@require_auth
 def get_statistics():
     total_employees = mongo.db.employees.count_documents({})
     
@@ -768,91 +771,100 @@ def get_statistics():
         'cards_expired': cards_expired
     })
 
-# API للحصول على قوائم الفلاتر
+# API للحصول على قوائم الفلاتر - بدون مصادقة
 @app.route('/api/filters')
-def get_filters():  # إزالة @require_auth مؤقتاً
-    nationality_codes = mongo.db.employees.distinct('nationality_code')
-    
-    # تحويل أكواد الجنسيات إلى أسماء كاملة
-    nationalities = []
-    for code in nationality_codes:
-        if code:  # تجاهل القيم الفارغة
-            nationalities.append({
-                'code': code,
-                'name_en': get_nationality_name(code, 'en'),
-                'name_ar': get_nationality_name(code, 'ar')
-            })
-    
-    # ترتيب حسب الاسم الإنجليزي
-    nationalities.sort(key=lambda x: x['name_en'])
-    
-    companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, 'company_name_eng': 1, '_id': 0}))
-    jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, 'job_eng': 1, '_id': 0}).sort('job_code', 1))
-    
-    return jsonify({
-        'nationalities': nationalities,
-        'companies': [{'code': c['company_code'], 'name': c['company_name_ara'], 'name_ara': c['company_name_ara'], 'name_eng': c.get('company_name_eng', c['company_name_ara'])} for c in companies],
-        'jobs': [{'code': j['job_code'], 'name': j['job_ara'], 'name_ara': j['job_ara'], 'name_eng': j.get('job_eng', j['job_ara'])} for j in jobs]
-    })
+def get_filters():
+    try:
+        nationality_codes = mongo.db.employees.distinct('nationality_code')
+        
+        # تحويل أكواد الجنسيات إلى أسماء كاملة
+        nationalities = []
+        for code in nationality_codes:
+            if code:  # تجاهل القيم الفارغة
+                nationalities.append({
+                    'code': code,
+                    'name_en': get_nationality_name(code, 'en'),
+                    'name_ar': get_nationality_name(code, 'ar')
+                })
+        
+        # ترتيب حسب الاسم الإنجليزي
+        nationalities.sort(key=lambda x: x['name_en'])
+        
+        companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, 'company_name_eng': 1, '_id': 0}))
+        jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, 'job_eng': 1, '_id': 0}).sort('job_code', 1))
+        departments = list(mongo.db.departments.find({}, {'dept_code': 1, 'dept_name_ara': 1, 'dept_name_eng': 1, '_id': 0}).sort('dept_code', 1))
+        
+        return jsonify({
+            'nationalities': nationalities,
+            'companies': [{'code': c['company_code'], 'name': c['company_name_ara'], 'name_ara': c['company_name_ara'], 'name_eng': c.get('company_name_eng', c['company_name_ara'])} for c in companies],
+            'jobs': [{'code': j['job_code'], 'name': j['job_ara'], 'name_ara': j['job_ara'], 'name_eng': j.get('job_eng', j['job_ara'])} for j in jobs],
+            'departments': [{'code': d['dept_code'], 'name': d['dept_name_ara'], 'name_ara': d['dept_name_ara'], 'name_eng': d.get('dept_name_eng', d['dept_name_ara'])} for d in departments]
+        })
+    except Exception as e:
+        logger.error(f"Error in get_filters: {e}")
+        return jsonify({'error': 'خطأ في تحميل البيانات'}), 500
 
-@app.route('/api/jobs', methods=['GET', 'POST'])
+# APIs للوظائف - قراءة عامة
+@app.route('/api/jobs', methods=['GET'])
+def get_jobs():
+    """جلب الوظائف - لا يحتاج مصادقة"""
+    try:
+        jobs = list(mongo.db.jobs.find({}, {'_id': 0}).sort('job_code'))
+        return jsonify(jobs)
+    except Exception as e:
+        logger.error(f"Error fetching jobs: {e}")
+        return jsonify({'error': 'خطأ في جلب الوظائف'}), 500
+
+@app.route('/api/jobs', methods=['POST'])
 @require_auth
-def handle_jobs():
-    """إدارة الوظائف - جلب أو إضافة"""
-    if request.method == 'GET':
-        try:
-            jobs = list(mongo.db.jobs.find({}, {'_id': 0}))
-            return jsonify(jobs)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    elif request.method == 'POST':
-        try:
-            data = request.get_json()
-            job_ara = data.get('job_ara', '').strip()
-            job_eng = data.get('job_eng', '').strip()
+def add_job():
+    """إضافة وظيفة جديدة - يحتاج مصادقة"""
+    try:
+        data = request.get_json()
+        job_ara = data.get('job_ara', '').strip()
+        job_eng = data.get('job_eng', '').strip()
+        
+        if not job_ara or not job_eng:
+            return jsonify({'error': 'اسم الوظيفة بالعربية والإنجليزية مطلوب'}), 400
             
-            if not job_ara or not job_eng:
-                return jsonify({'error': 'اسم الوظيفة بالعربية والإنجليزية مطلوب'}), 400
-            
-            # التحقق من عدم وجود الوظيفة مسبقاً
-            existing_job = mongo.db.jobs.find_one({
-                '$or': [
-                    {'job_ara': job_ara},
-                    {'job_eng': job_eng}
-                ]
-            })
-            
-            if existing_job:
-                return jsonify({'error': 'الوظيفة موجودة مسبقاً'}), 400
-            
-            # إنشاء رقم جديد للوظيفة
-            last_job = mongo.db.jobs.find_one({}, sort=[('job_code', -1)])
-            new_job_code = int(last_job['job_code']) + 1 if last_job else 1
-            
-            # إضافة الوظيفة الجديدة
-            new_job = {
+        # التحقق من عدم وجود الوظيفة مسبقاً
+        existing_job = mongo.db.jobs.find_one({
+            '$or': [
+                {'job_ara': job_ara},
+                {'job_eng': job_eng}
+            ]
+        })
+        
+        if existing_job:
+            return jsonify({'error': 'الوظيفة موجودة مسبقاً'}), 400
+        
+        # إنشاء رقم جديد للوظيفة
+        last_job = mongo.db.jobs.find_one({}, sort=[('job_code', -1)])
+        new_job_code = int(last_job['job_code']) + 1 if last_job else 1
+        
+        # إضافة الوظيفة الجديدة
+        new_job = {
+            'job_code': new_job_code,
+            'job_ara': job_ara,
+            'job_eng': job_eng,
+            'created_at': datetime.now(timezone.utc)
+        }
+        
+        result = mongo.db.jobs.insert_one(new_job)
+        
+        if result.inserted_id:
+            log_activity('ADD_JOB', f'Added new job: {job_ara} / {job_eng}')
+            return jsonify({
                 'job_code': new_job_code,
                 'job_ara': job_ara,
-                'job_eng': job_eng,
-                'created_at': datetime.now(timezone.utc)
-            }
+                'job_eng': job_eng
+            })
+        else:
+            return jsonify({'error': 'فشل في إضافة الوظيفة'}), 500
             
-            result = mongo.db.jobs.insert_one(new_job)
-            
-            if result.inserted_id:
-                log_activity('ADD_JOB', f'Added new job: {job_ara} / {job_eng}')
-                return jsonify({
-                    'job_code': new_job_code,
-                    'job_ara': job_ara,
-                    'job_eng': job_eng
-                })
-            else:
-                return jsonify({'error': 'فشل في إضافة الوظيفة'}), 500
-                
-        except Exception as e:
-            logger.error(f"Error adding new job: {e}")
-            return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+    except Exception as e:
+        logger.error(f"Error adding new job: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 # API لتعديل وظيفة
 @app.route('/api/jobs/<int:job_code>', methods=['PUT'])
@@ -916,66 +928,69 @@ def delete_job(job_code):
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 # API لإدارة الشركات
-@app.route('/api/companies', methods=['GET', 'POST'])
+# APIs للشركات - قراءة عامة
+@app.route('/api/companies', methods=['GET'])
+def get_companies():
+    """جلب الشركات - لا يحتاج مصادقة"""
+    try:
+        companies = list(mongo.db.companies.find({}, {'_id': 0}).sort('company_name_ara'))
+        return jsonify(companies)
+    except Exception as e:
+        logger.error(f"Error fetching companies: {e}")
+        return jsonify({'error': 'خطأ في جلب الشركات'}), 500
+
+@app.route('/api/companies', methods=['POST'])
 @require_auth
-def handle_companies():
-    """إدارة الشركات - جلب أو إضافة"""
-    if request.method == 'GET':
-        try:
-            companies = list(mongo.db.companies.find({}, {'_id': 0}))
-            return jsonify(companies)
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
-    
-    elif request.method == 'POST':
-        try:
-            data = request.get_json()
-            company_code = data.get('company_code', '').strip().upper()
-            company_name_ara = data.get('company_name_ara', '').strip()
-            company_name_eng = data.get('company_name_eng', '').strip()
-            
-            if not company_code or not company_name_ara or not company_name_eng:
-                return jsonify({'error': 'جميع بيانات الشركة مطلوبة'}), 400
-            
-            # التحقق من صحة رمز الشركة
-            if not company_code.isalpha():
-                return jsonify({'error': 'رمز الشركة يجب أن يحتوي على حروف فقط'}), 400
-            
-            # التحقق من عدم وجود الشركة مسبقاً
-            existing_company = mongo.db.companies.find_one({
-                '$or': [
-                    {'company_code': company_code},
-                    {'company_name_ara': company_name_ara},
-                    {'company_name_eng': company_name_eng}
-                ]
-            })
-            
-            if existing_company:
-                return jsonify({'error': 'الشركة موجودة مسبقاً'}), 400
-            
-            # إضافة الشركة الجديدة
-            new_company = {
+def add_company():
+    """إضافة شركة جديدة - يحتاج مصادقة"""
+    try:
+        data = request.get_json()
+        company_code = data.get('company_code', '').strip().upper()
+        company_name_ara = data.get('company_name_ara', '').strip()
+        company_name_eng = data.get('company_name_eng', '').strip()
+        
+        if not company_code or not company_name_ara or not company_name_eng:
+            return jsonify({'error': 'جميع بيانات الشركة مطلوبة'}), 400
+        
+        # التحقق من صحة رمز الشركة
+        if not company_code.isalpha():
+            return jsonify({'error': 'رمز الشركة يجب أن يحتوي على حروف فقط'}), 400
+        
+        # التحقق من عدم وجود الشركة مسبقاً
+        existing_company = mongo.db.companies.find_one({
+            '$or': [
+                {'company_code': company_code},
+                {'company_name_ara': company_name_ara},
+                {'company_name_eng': company_name_eng}
+            ]
+        })
+        
+        if existing_company:
+            return jsonify({'error': 'الشركة موجودة مسبقاً'}), 400
+        
+        # إضافة الشركة الجديدة
+        new_company = {
+            'company_code': company_code,
+            'company_name_ara': company_name_ara,
+            'company_name_eng': company_name_eng,
+            'created_at': datetime.now(timezone.utc)
+        }
+        
+        result = mongo.db.companies.insert_one(new_company)
+        
+        if result.inserted_id:
+            log_activity('ADD_COMPANY', f'Added new company: {company_name_ara} / {company_name_eng} ({company_code})')
+            return jsonify({
                 'company_code': company_code,
                 'company_name_ara': company_name_ara,
-                'company_name_eng': company_name_eng,
-                'created_at': datetime.now(timezone.utc)
-            }
+                'company_name_eng': company_name_eng
+            })
+        else:
+            return jsonify({'error': 'فشل في إضافة الشركة'}), 500
             
-            result = mongo.db.companies.insert_one(new_company)
-            
-            if result.inserted_id:
-                log_activity('ADD_COMPANY', f'Added new company: {company_name_ara} / {company_name_eng} ({company_code})')
-                return jsonify({
-                    'company_code': company_code,
-                    'company_name_ara': company_name_ara,
-                    'company_name_eng': company_name_eng
-                })
-            else:
-                return jsonify({'error': 'فشل في إضافة الشركة'}), 500
-                
-        except Exception as e:
-            logger.error(f"Error adding new company: {e}")
-            return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+    except Exception as e:
+        logger.error(f"Error adding new company: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 # API لتعديل شركة
 @app.route('/api/companies/<company_code>', methods=['PUT'])
@@ -1051,6 +1066,7 @@ def employees_summary():
     nationality = request.args.get('nationality', '')
     company = request.args.get('company', '')
     job = request.args.get('job', '')
+    department = request.args.get('department', '')
     passport_status = request.args.get('passport_status', '')
     card_status = request.args.get('card_status', '')
     page = int(request.args.get('page', 1))
@@ -1077,6 +1093,9 @@ def employees_summary():
             filter_query['job_code'] = int(job)
         except (ValueError, TypeError):
             pass  # تجاهل القيم غير الصحيحة
+    
+    if department:
+        filter_query['department_code'] = department
     
     # إضافة فلاتر حالة الجواز والبطاقة (نفس منطق البحث الرئيسي)
     if passport_status == 'missing':
@@ -1737,6 +1756,124 @@ def cleanup_audit_logs():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# APIs للأقسام
+@app.route('/api/departments')
+def get_departments():
+    """جلب جميع الأقسام - لا يحتاج مصادقة"""
+    try:
+        departments = list(mongo.db.departments.find({}, {'_id': 0}).sort('department_name_ara'))
+        return jsonify(departments)
+    except Exception as e:
+        logger.error(f"Error fetching departments: {e}")
+        return jsonify({'error': 'خطأ في جلب الأقسام'}), 500
+
+# APIs عامة للبيانات الأساسية (بدون مصادقة)
+@app.route('/api/public/jobs')
+def get_public_jobs():
+    """جلب الوظائف - نسخة عامة بدون مصادقة"""
+    try:
+        jobs = list(mongo.db.jobs.find({}, {'_id': 0}).sort('job_code'))
+        return jsonify(jobs)
+    except Exception as e:
+        logger.error(f"Error fetching public jobs: {e}")
+        return jsonify({'error': 'خطأ في جلب الوظائف'}), 500
+
+@app.route('/api/public/companies')
+def get_public_companies():
+    """جلب الشركات - نسخة عامة بدون مصادقة"""
+    try:
+        companies = list(mongo.db.companies.find({}, {'_id': 0}).sort('company_name_ara'))
+        return jsonify(companies)
+    except Exception as e:
+        logger.error(f"Error fetching public companies: {e}")
+        return jsonify({'error': 'خطأ في جلب الشركات'}), 500
+
+@app.route('/api/public/departments')
+def get_public_departments():
+    """جلب الأقسام - نسخة عامة بدون مصادقة"""
+    try:
+        departments = list(mongo.db.departments.find({}, {'_id': 0}).sort('department_name_ara'))
+        return jsonify(departments)
+    except Exception as e:
+        logger.error(f"Error fetching public departments: {e}")
+        return jsonify({'error': 'خطأ في جلب الأقسام'}), 500
+
+@app.route('/api/departments', methods=['POST'])
+@require_auth
+def add_department():
+    """إضافة قسم جديد"""
+    try:
+        data = request.get_json()
+        
+        # التحقق من البيانات المطلوبة
+        if not data.get('department_code') or not data.get('department_name_ara') or not data.get('department_name_eng'):
+            return jsonify({'error': 'جميع حقول القسم مطلوبة'}), 400
+        
+        # التحقق من عدم وجود قسم بنفس الكود
+        existing = mongo.db.departments.find_one({'department_code': data['department_code']})
+        if existing:
+            return jsonify({'error': 'كود القسم موجود مسبقاً'}), 400
+        
+        # إدراج القسم الجديد
+        mongo.db.departments.insert_one(data)
+        
+        log_activity('إضافة قسم', f'تم إضافة القسم {data.get("department_name_ara", "")} - كود: {data.get("department_code", "")}')
+        
+        return jsonify(data), 201
+        
+    except Exception as e:
+        logger.error(f"Error adding department: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
+@app.route('/api/departments/<department_code>', methods=['PUT'])
+@require_auth
+def update_department(department_code):
+    """تحديث قسم"""
+    try:
+        data = request.get_json()
+        
+        # تحديث القسم
+        result = mongo.db.departments.update_one(
+            {'department_code': department_code},
+            {'$set': {
+                'department_name_ara': data.get('department_name_ara'),
+                'department_name_eng': data.get('department_name_eng')
+            }}
+        )
+        
+        if result.matched_count == 0:
+            return jsonify({'error': 'القسم غير موجود'}), 404
+        
+        log_activity('تحديث قسم', f'تم تحديث القسم: {data.get("department_name_ara", "")} ({department_code})')
+        return jsonify(data)
+            
+    except Exception as e:
+        logger.error(f"Error updating department: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
+@app.route('/api/departments/<department_code>', methods=['DELETE'])
+@require_auth
+def delete_department(department_code):
+    """حذف قسم"""
+    try:
+        # التحقق من وجود موظفين يستخدمون هذا القسم
+        employees_count = mongo.db.employees.count_documents({'department_code': department_code})
+        if employees_count > 0:
+            return jsonify({'error': f'لا يمكن حذف القسم. يوجد {employees_count} موظف مرتبط بهذا القسم'}), 400
+        
+        # حذف القسم
+        result = mongo.db.departments.delete_one({'department_code': department_code})
+        
+        if result.deleted_count == 0:
+            return jsonify({'error': 'القسم غير موجود'}), 404
+        
+        log_activity('حذف قسم', f'تم حذف القسم: {department_code}')
+        return jsonify({'message': 'تم حذف القسم بنجاح'})
+            
+    except Exception as e:
+        logger.error(f"Error deleting department: {e}")
+        return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
+
 def load_initial_data():
     """تحميل البيانات الأولية في MongoDB"""
     
@@ -1782,7 +1919,26 @@ def load_initial_data():
     ]
     
     mongo.db.jobs.insert_many(jobs_data)
-    print("تم تحميل بيانات الشركات والوظائف بنجاح في MongoDB!")
+    
+    # بيانات الأقسام
+    departments_data = [
+        {"department_code": "HR", "department_name_eng": "Human Resources", "department_name_ara": "الموارد البشرية"},
+        {"department_code": "FIN", "department_name_eng": "Finance", "department_name_ara": "المالية"},
+        {"department_code": "IT", "department_name_eng": "Information Technology", "department_name_ara": "تقنية المعلومات"},
+        {"department_code": "MKT", "department_name_eng": "Marketing", "department_name_ara": "التسويق"},
+        {"department_code": "SLS", "department_name_eng": "Sales", "department_name_ara": "المبيعات"},
+        {"department_code": "OPS", "department_name_eng": "Operations", "department_name_ara": "العمليات"},
+        {"department_code": "LOG", "department_name_eng": "Logistics", "department_name_ara": "الخدمات اللوجستية"},
+        {"department_code": "ADM", "department_name_eng": "Administration", "department_name_ara": "الإدارة"},
+        {"department_code": "LEG", "department_name_eng": "Legal", "department_name_ara": "الشؤون القانونية"},
+        {"department_code": "WAR", "department_name_eng": "Warehouse", "department_name_ara": "المخازن"}
+    ]
+    
+    # حذف البيانات الموجودة وإدراج البيانات الجديدة
+    mongo.db.departments.delete_many({})
+    mongo.db.departments.insert_many(departments_data)
+    
+    print("تم تحميل بيانات الشركات والوظائف والأقسام بنجاح في MongoDB!")
     
     # إنشاء المستخدم الإداري
     init_admin_user()

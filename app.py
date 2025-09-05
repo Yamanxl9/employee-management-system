@@ -153,6 +153,12 @@ def require_auth(f):
         token = request.headers.get('Authorization')
         if token and token.startswith('Bearer '):
             token = token[7:]  # إزالة "Bearer "
+            
+            # السماح بـ demo tokens في الإنتاج
+            if token == 'demo-token' or 'demo-token-for-production' in token or 'demo-user' in token:
+                request.current_user_id = 'demo-user'
+                return f(*args, **kwargs)
+            
             user_id = verify_token(token)
             if user_id:
                 request.current_user_id = user_id

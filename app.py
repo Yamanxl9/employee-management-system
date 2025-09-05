@@ -857,6 +857,24 @@ def get_statistics():
         job_stats = {item['job_name'] or str(item['_id']): item['count'] 
                     for item in mongo.db.employees.aggregate(job_pipeline)}
         
+        # إحصائيات الأقسام
+        department_pipeline = [
+            {'$lookup': {
+                'from': 'department',
+                'localField': 'department_code',
+                'foreignField': 'department_code',
+                'as': 'department_info'
+            }},
+            {'$group': {
+                '_id': '$department_code',
+                'count': {'$sum': 1},
+                'department_name': {'$first': {'$arrayElemAt': ['$department_info.department_name_ara', 0]}}
+            }}
+        ]
+        department_stats = {item['department_name'] or str(item['_id']): item['count'] 
+                           for item in mongo.db.employees.aggregate(department_pipeline) 
+                           if item['_id'] is not None}
+        
         # إحصائيات حالة الجوازات والبطاقات
         employees = list(mongo.db.employees.find())
         passport_missing = sum(1 for emp in employees if not emp.get('pass_no'))
@@ -879,6 +897,7 @@ def get_statistics():
             'nationality_stats': nationality_stats,
             'company_stats': company_stats,
             'job_stats': job_stats,
+            'department_stats': department_stats,
             'passport_missing': passport_missing,
             'cards_missing': cards_missing,
             'cards_expired': cards_expired
@@ -893,6 +912,7 @@ def get_statistics():
             'nationality_stats': {},
             'company_stats': {},
             'job_stats': {},
+            'department_stats': {},
             'passport_missing': 0,
             'cards_missing': 0,
             'cards_expired': 0
@@ -1367,12 +1387,13 @@ def get_detailed_results():
         nationality = data.get('nationality', '')
         company = data.get('company', '')
         job = data.get('job', '')
+        department = data.get('department', '')
         passport_status = data.get('passport_status', '')
         card_status = data.get('card_status', '')
         emirates_id_status = data.get('emirates_id_status', '')
         residence_status = data.get('residence_status', '')
         
-        logger.info(f"Detailed search request: query='{query}', nationality='{nationality}', company='{company}', job='{job}', passport_status='{passport_status}', card_status='{card_status}', emirates_id_status='{emirates_id_status}', residence_status='{residence_status}'")
+        logger.info(f"Detailed search request: query='{query}', nationality='{nationality}', company='{company}', job='{job}', department='{department}', passport_status='{passport_status}', card_status='{card_status}', emirates_id_status='{emirates_id_status}', residence_status='{residence_status}'")
         
         # بناء استعلام البحث (نفس المنطق من API البحث الأساسي)
         filter_query = {}
@@ -1397,6 +1418,9 @@ def get_detailed_results():
             
         if job:
             filter_query['job_code'] = job
+        
+        if department:
+            filter_query['department_code'] = department
         
         # فلترة حالة الجواز
         if passport_status == 'available':
@@ -1673,7 +1697,8 @@ def export_filtered_results():
                 from openpyxl.utils import get_column_letter
                 
                 # إضافة عنوان رئيسي للتقرير
-                worksheet.merge_cells('A1:Q2')  # تعديل النطاق ليشمل الأعمدة الجديدة
+                # عدد الأعمدة الجديد: 18 عمود (بدلاً من 17) لأننا أضفنا القسم
+                worksheet.merge_cells('A1:R2')  # تعديل النطاق ليشمل جميع الأعمدة الجديدة
                 title_cell = worksheet['A1']
                 title_cell.value = f"تقرير بيانات الموظفين - {datetime.now().strftime('%d/%m/%Y %H:%M')}"
                 title_cell.font = Font(name='Calibri', size=16, bold=True, color='FFFFFF')
@@ -1773,10 +1798,18 @@ def export_filtered_results():
                     filter_info.append(f"الجنسية: {filters['nationality']}")
                 if filters.get('company'):
                     filter_info.append(f"الشركة: {filters['company']}")
+                if filters.get('job'):
+                    filter_info.append(f"الوظيفة: {filters['job']}")
+                if filters.get('department'):
+                    filter_info.append(f"القسم: {filters['department']}")
                 if filters.get('passport_status'):
                     filter_info.append(f"حالة الجواز: {filters['passport_status']}")
                 if filters.get('card_status'):
                     filter_info.append(f"حالة البطاقة: {filters['card_status']}")
+                if filters.get('emirates_id_status'):
+                    filter_info.append(f"حالة الهوية: {filters['emirates_id_status']}")
+                if filters.get('residence_status'):
+                    filter_info.append(f"حالة الإقامة: {filters['residence_status']}")
                 
                 # إضافة ورقة معلومات التقرير
                 summary_data = [

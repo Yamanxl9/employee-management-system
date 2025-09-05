@@ -3274,6 +3274,7 @@
                     nationality: document.getElementById('nationalityFilter').value,
                     company: document.getElementById('companyFilter').value,
                     job: document.getElementById('jobFilter').value,
+                    department: document.getElementById('departmentFilter').value,
                     passport_status: document.getElementById('passportStatusFilter').value,
                     card_status: document.getElementById('cardStatusFilter').value,
                     emirates_id_status: document.getElementById('emiratesIdStatusFilter').value,
@@ -3330,6 +3331,8 @@
                     if (filters.query) filename = `تقرير_بحث_${filters.query}_${date}.xlsx`;
                     else if (filters.nationality) filename = `تقرير_جنسية_${filters.nationality}_${date}.xlsx`;
                     else if (filters.company) filename = `تقرير_شركة_${filters.company}_${date}.xlsx`;
+                    else if (filters.job) filename = `تقرير_وظيفة_${filters.job}_${date}.xlsx`;
+                    else if (filters.department) filename = `تقرير_قسم_${filters.department}_${date}.xlsx`;
                     else if (filters.passport_status) filename = `تقرير_جوازات_${filters.passport_status}_${date}.xlsx`;
                     else if (filters.card_status) filename = `تقرير_بطاقات_${filters.card_status}_${date}.xlsx`;
                     
@@ -3365,6 +3368,7 @@
             document.getElementById('nationalityFilter').value = '';
             document.getElementById('companyFilter').value = '';
             document.getElementById('jobFilter').value = '';
+            document.getElementById('departmentFilter').value = '';
             document.getElementById('passportStatusFilter').value = '';
             document.getElementById('cardStatusFilter').value = '';
             document.getElementById('emiratesIdStatusFilter').value = '';

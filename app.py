@@ -758,72 +758,86 @@ def get_statistics():
         
         total_employees = mongo.db.employees.count_documents({})
     
-    # إحصائيات الجنسيات
-    nationality_pipeline = [
-        {'$group': {'_id': '$nationality_code', 'count': {'$sum': 1}}}
-    ]
-    nationality_stats = {item['_id']: item['count'] for item in mongo.db.employees.aggregate(nationality_pipeline)}
-    
-    # إحصائيات الشركات
-    company_pipeline = [
-        {'$lookup': {
-            'from': 'companies',
-            'localField': 'company_code',
-            'foreignField': 'company_code',
-            'as': 'company_info'
-        }},
-        {'$group': {
-            '_id': '$company_code',
-            'count': {'$sum': 1},
-            'company_name': {'$first': {'$arrayElemAt': ['$company_info.company_name_ara', 0]}}
-        }}
-    ]
-    company_stats = {item['company_name'] or item['_id']: item['count'] 
-                    for item in mongo.db.employees.aggregate(company_pipeline)}
-    
-    # إحصائيات الوظائف
-    job_pipeline = [
-        {'$lookup': {
-            'from': 'jobs',
-            'localField': 'job_code',
-            'foreignField': 'job_code',
-            'as': 'job_info'
-        }},
-        {'$group': {
-            '_id': '$job_code',
-            'count': {'$sum': 1},
-            'job_name': {'$first': {'$arrayElemAt': ['$job_info.job_ara', 0]}}
-        }}
-    ]
-    job_stats = {item['job_name'] or str(item['_id']): item['count'] 
-                for item in mongo.db.employees.aggregate(job_pipeline)}
-    
-    # إحصائيات حالة الجوازات والبطاقات
-    employees = list(mongo.db.employees.find())
-    passport_missing = sum(1 for emp in employees if not emp.get('pass_no'))
-    cards_missing = sum(1 for emp in employees if not emp.get('card_no'))
-    
-    cards_expired = 0
-    for emp in employees:
-        if emp.get('card_expiry_date'):
-            expiry_date = emp['card_expiry_date']
-            if isinstance(expiry_date, str):
-                expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
-            # التأكد من أن expiry_date يحتوي على timezone
-            if expiry_date.tzinfo is None:
-                expiry_date = expiry_date.replace(tzinfo=timezone.utc)
-            if expiry_date < datetime.now(timezone.utc):
-                cards_expired += 1
-    
-    return jsonify({
-        'total_employees': total_employees,
-        'nationality_stats': nationality_stats,
-        'company_stats': company_stats,
-        'job_stats': job_stats,
-        'passport_missing': passport_missing,
-        'cards_missing': cards_missing,
-        'cards_expired': cards_expired
-    })
+        # إحصائيات الجنسيات
+        nationality_pipeline = [
+            {'$group': {'_id': '$nationality_code', 'count': {'$sum': 1}}}
+        ]
+        nationality_stats = {item['_id']: item['count'] for item in mongo.db.employees.aggregate(nationality_pipeline)}
+        
+        # إحصائيات الشركات
+        company_pipeline = [
+            {'$lookup': {
+                'from': 'companies',
+                'localField': 'company_code',
+                'foreignField': 'company_code',
+                'as': 'company_info'
+            }},
+            {'$group': {
+                '_id': '$company_code',
+                'count': {'$sum': 1},
+                'company_name': {'$first': {'$arrayElemAt': ['$company_info.company_name_ara', 0]}}
+            }}
+        ]
+        company_stats = {item['company_name'] or item['_id']: item['count'] 
+                        for item in mongo.db.employees.aggregate(company_pipeline)}
+        
+        # إحصائيات الوظائف
+        job_pipeline = [
+            {'$lookup': {
+                'from': 'jobs',
+                'localField': 'job_code',
+                'foreignField': 'job_code',
+                'as': 'job_info'
+            }},
+            {'$group': {
+                '_id': '$job_code',
+                'count': {'$sum': 1},
+                'job_name': {'$first': {'$arrayElemAt': ['$job_info.job_ara', 0]}}
+            }}
+        ]
+        job_stats = {item['job_name'] or str(item['_id']): item['count'] 
+                    for item in mongo.db.employees.aggregate(job_pipeline)}
+        
+        # إحصائيات حالة الجوازات والبطاقات
+        employees = list(mongo.db.employees.find())
+        passport_missing = sum(1 for emp in employees if not emp.get('pass_no'))
+        cards_missing = sum(1 for emp in employees if not emp.get('card_no'))
+        
+        cards_expired = 0
+        for emp in employees:
+            if emp.get('card_expiry_date'):
+                expiry_date = emp['card_expiry_date']
+                if isinstance(expiry_date, str):
+                    expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+                # التأكد من أن expiry_date يحتوي على timezone
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                if expiry_date < datetime.now(timezone.utc):
+                    cards_expired += 1
+        
+        return jsonify({
+            'total_employees': total_employees,
+            'nationality_stats': nationality_stats,
+            'company_stats': company_stats,
+            'job_stats': job_stats,
+            'passport_missing': passport_missing,
+            'cards_missing': cards_missing,
+            'cards_expired': cards_expired
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in get_statistics: {e}")
+        return jsonify({
+            'error': 'خطأ في تحميل الإحصائيات',
+            'message': str(e),
+            'total_employees': 0,
+            'nationality_stats': {},
+            'company_stats': {},
+            'job_stats': {},
+            'passport_missing': 0,
+            'cards_missing': 0,
+            'cards_expired': 0
+        }), 500
 
 # API للحصول على قوائم الفلاتر - بدون مصادقة
 @app.route('/api/filters')

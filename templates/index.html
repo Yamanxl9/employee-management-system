@@ -3794,13 +3794,13 @@
             
             if (confirm('هل أنت متأكد من حذف هذا القسم؟')) {
                 try {
-                    // الحصول على الـ token الصحيح
-                    const authToken = localStorage.getItem('authToken');
+                    console.log('🔄 Deleting department without authentication...');
                     
                     const response = await fetch(`/api/departments/${code}`, {
                         method: 'DELETE',
                         headers: {
-                            'Authorization': `Bearer ${authToken}`
+                            'Content-Type': 'application/json'
+                            // إزالة Authorization header للإنتاج
                         }
                     });
                     
@@ -3854,15 +3854,13 @@
             }
             
             try {
-                // الحصول على الـ token الصحيح
-                const authToken = localStorage.getItem('authToken');
-                console.log('🔑 Using token for department creation:', authToken ? 'Token found' : 'No token');
+                console.log('� Creating department without authentication...');
                 
                 const response = await fetch('/api/departments', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
+                        'Content-Type': 'application/json'
+                        // إزالة Authorization header للإنتاج
                     },
                     body: JSON.stringify({
                         department_code: departmentCode,

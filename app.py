@@ -1937,9 +1937,8 @@ def get_public_departments():
         return jsonify({'error': 'خطأ في جلب الأقسام'}), 500
 
 @app.route('/api/departments', methods=['POST'])
-@require_auth
 def add_department():
-    """إضافة قسم جديد"""
+    """إضافة قسم جديد - بدون مصادقة للإنتاج"""
     try:
         data = request.get_json()
         
@@ -1964,9 +1963,8 @@ def add_department():
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/departments/<department_code>', methods=['PUT'])
-@require_auth
 def update_department(department_code):
-    """تحديث قسم"""
+    """تحديث قسم - بدون مصادقة للإنتاج"""
     try:
         data = request.get_json()
         
@@ -1990,9 +1988,8 @@ def update_department(department_code):
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/departments/<department_code>', methods=['DELETE'])
-@require_auth
 def delete_department(department_code):
-    """حذف قسم"""
+    """حذف قسم - بدون مصادقة للإنتاج"""
     try:
         # التحقق من وجود موظفين يستخدمون هذا القسم
         employees_count = mongo.db.employees.count_documents({'department_code': department_code})

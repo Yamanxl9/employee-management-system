@@ -27,12 +27,36 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
 app.config['MONGO_URI'] = os.getenv('MONGODB_URI', 'mongodb+srv://yamanxl9:SgIhE4u0FbzRhbyp@cluster0.lqokm.mongodb.net/employee_management?retryWrites=true&w=majority&appName=Cluster0')
 
-# إعداد MongoDB
-mongo = PyMongo(app)
+# إعداد MongoDB مع معالجة الأخطاء
+try:
+    mongo = PyMongo(app)
+    # اختبار الاتصال
+    mongo.db.test_connection.find_one()
+    logger.info("✅ MongoDB connection successful!")
+except Exception as e:
+    logger.error(f"❌ MongoDB connection failed: {e}")
+    mongo = None
+
+# دالة للتحقق من اتصال MongoDB
+def check_mongodb_connection():
+    """التحقق من حالة اتصال MongoDB"""
+    if not mongo:
+        return False, "MongoDB connection not initialized"
+    
+    try:
+        # اختبار بسيط للاتصال
+        mongo.db.admin.command('ping')
+        return True, "MongoDB connection is healthy"
+    except Exception as e:
+        return False, f"MongoDB connection error: {str(e)}"
 
 # دالة لتسجيل الأنشطة في Audit Log
 def log_activity(action, details, user_id=None):
     """تسجيل نشاط في سجل التدقيق"""
+    if not mongo:
+        logger.warning("Cannot log activity: MongoDB not connected")
+        return
+        
     try:
         audit_log = {
             'timestamp': datetime.now(),
@@ -149,6 +173,22 @@ def init_admin_user():
         }
         mongo.db.users.insert_one(admin_data)
         print("تم إنشاء المستخدم الإداري: admin / admin123")
+
+# API للتحقق من حالة النظام
+@app.route('/api/health')
+def health_check():
+    """فحص حالة النظام والاتصال بقاعدة البيانات"""
+    is_connected, message = check_mongodb_connection()
+    
+    return jsonify({
+        'status': 'healthy' if is_connected else 'unhealthy',
+        'mongodb': {
+            'connected': is_connected,
+            'message': message
+        },
+        'timestamp': datetime.now().isoformat(),
+        'version': '2.0'
+    }), 200 if is_connected else 503
 
 # الصفحة الرئيسية
 @app.route('/')
@@ -702,7 +742,21 @@ def get_employee(staff_no):
 # API للإحصائيات - بدون مصادقة
 @app.route('/api/statistics')
 def get_statistics():
-    total_employees = mongo.db.employees.count_documents({})
+    try:
+        # التحقق من اتصال MongoDB
+        if not mongo:
+            return jsonify({
+                'error': 'Database connection not available',
+                'total_employees': 0,
+                'nationality_stats': {},
+                'company_stats': {},
+                'job_stats': {},
+                'passport_missing': 0,
+                'cards_missing': 0,
+                'cards_expired': 0
+            }), 503
+        
+        total_employees = mongo.db.employees.count_documents({})
     
     # إحصائيات الجنسيات
     nationality_pipeline = [
@@ -775,6 +829,16 @@ def get_statistics():
 @app.route('/api/filters')
 def get_filters():
     try:
+        # التحقق من اتصال MongoDB
+        if not mongo:
+            return jsonify({
+                'error': 'Database connection not available',
+                'nationalities': [],
+                'companies': [],
+                'jobs': [],
+                'departments': []
+            }), 503
+        
         nationality_codes = mongo.db.employees.distinct('nationality_code')
         
         # تحويل أكواد الجنسيات إلى أسماء كاملة
@@ -802,7 +866,14 @@ def get_filters():
         })
     except Exception as e:
         logger.error(f"Error in get_filters: {e}")
-        return jsonify({'error': 'خطأ في تحميل البيانات'}), 500
+        return jsonify({
+            'error': 'خطأ في تحميل البيانات',
+            'message': str(e),
+            'nationalities': [],
+            'companies': [],
+            'jobs': [],
+            'departments': []
+        }), 500
 
 # APIs للوظائف - قراءة عامة
 @app.route('/api/jobs', methods=['GET'])

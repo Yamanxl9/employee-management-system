@@ -343,7 +343,6 @@ def verify_token_route():
 
 # API للبحث عن الموظفين
 @app.route('/api/search')
-@require_auth
 def search_employees():
     query = request.args.get('query', '').strip()
     nationality = request.args.get('nationality', '')
@@ -1371,7 +1370,6 @@ def employees_summary():
 
 # API تصدير النتائج المفلترة
 @app.route('/api/get-detailed-results', methods=['POST'])
-@require_auth
 def get_detailed_results():
     """جلب النتائج التفصيلية للتصدير"""
     try:
@@ -1638,7 +1636,6 @@ def get_detailed_results():
         return jsonify({'error': f'خطأ في الخادم: {str(e)}'}), 500
 
 @app.route('/api/export-filtered-results', methods=['POST'])
-@require_auth
 def export_filtered_results():
     """تصدير النتائج المفلترة كملف Excel"""
     try:

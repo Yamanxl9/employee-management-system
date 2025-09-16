@@ -460,33 +460,44 @@ def verify_token_route():
 # API للبحث عن الموظفين
 @app.route('/api/search')
 def search_employees():
-    query = request.args.get('query', '').strip()
-    nationality = request.args.get('nationality', '')
-    company = request.args.get('company', '')
-    job = request.args.get('job', '')
-    department = request.args.get('department', '')
-    passport_status = request.args.get('passport_status', '')
-    card_status = request.args.get('card_status', '')
-    emirates_id_status = request.args.get('emirates_id_status', '')
-    residence_status = request.args.get('residence_status', '')
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 20))
+    try:
+        # التحقق من حالة اتصال MongoDB أولاً
+        if not mongo:
+            logger.error("MongoDB connection not available")
+            return jsonify({'error': 'Database connection unavailable', 'employees': [], 'total': 0}), 500
+        
+        query = request.args.get('query', '').strip()
+        nationality = request.args.get('nationality', '')
+        company = request.args.get('company', '')
+        job = request.args.get('job', '')
+        department = request.args.get('department', '')
+        passport_status = request.args.get('passport_status', '')
+        card_status = request.args.get('card_status', '')
+        emirates_id_status = request.args.get('emirates_id_status', '')
+        residence_status = request.args.get('residence_status', '')
+        
+        try:
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 20))
+        except (ValueError, TypeError):
+            page = 1
+            per_page = 20
     
-    # بناء الاستعلام
-    filter_query = {}
-    
-    if query:
-        # البحث المحسن باستخدام regex للدعم الأفضل للنصوص العربية والإنجليزية
-        regex_pattern = '.*' + re.escape(query) + '.*'
-        filter_query['$or'] = [
-            {'staff_name': {'$regex': regex_pattern, '$options': 'i'}},
-            {'staff_name_ara': {'$regex': regex_pattern, '$options': 'i'}},
-            {'staff_no': {'$regex': regex_pattern, '$options': 'i'}},
-            {'pass_no': {'$regex': regex_pattern, '$options': 'i'}},
-            {'card_no': {'$regex': regex_pattern, '$options': 'i'}},
-            {'emirates_id': {'$regex': regex_pattern, '$options': 'i'}},
-            {'residence_no': {'$regex': regex_pattern, '$options': 'i'}}
-        ]
+        # بناء الاستعلام
+        filter_query = {}
+        
+        if query:
+            # البحث المحسن باستخدام regex للدعم الأفضل للنصوص العربية والإنجليزية
+            regex_pattern = '.*' + re.escape(query) + '.*'
+            filter_query['$or'] = [
+                {'staff_name': {'$regex': regex_pattern, '$options': 'i'}},
+                {'staff_name_ara': {'$regex': regex_pattern, '$options': 'i'}},
+                {'staff_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'pass_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'card_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'emirates_id': {'$regex': regex_pattern, '$options': 'i'}},
+                {'residence_no': {'$regex': regex_pattern, '$options': 'i'}}
+            ]
         
         # إضافة البحث النصي كخيار احتياطي إذا كان متاحاً
         try:
@@ -713,6 +724,18 @@ def search_employees():
         'has_next': page < pages,
         'has_prev': page > 1
     })
+    
+    except Exception as e:
+        logger.error(f"Error in search_employees: {str(e)}")
+        return jsonify({
+            'error': f'خطأ في البحث: {str(e)}',
+            'employees': [],
+            'total': 0,
+            'pages': 0,
+            'current_page': 1,
+            'has_next': False,
+            'has_prev': False
+        }), 500
 
 # API لإضافة موظف جديد
 @app.route('/api/employees', methods=['POST'])

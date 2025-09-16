@@ -653,17 +653,19 @@
                 
                 <div class="row">
                     <div class="col-md-3 mb-3">
-                        <label class="form-label fw-bold" id="nationalityLabel">Nationality</label>
-                        <input type="text" class="form-control" id="nationalityFilter" placeholder="Enter nationality..." style="border-radius: 15px;">
+                        <label class="form-label fw-bold" id="nationalityLabel">الجنسية</label>
+                        <select class="form-select" id="nationalityFilter" style="border-radius: 15px;">
+                            <option value="" id="allNationalitiesOption">جميع الجنسيات</option>
+                        </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label class="form-label fw-bold" id="companyLabel">Company</label>
+                        <label class="form-label fw-bold" id="companyLabel">الشركة</label>
                         <select class="form-select" id="companyFilter" style="border-radius: 15px;">
                             <option value="" id="allCompaniesOption">All Companies</option>
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label class="form-label fw-bold" id="jobLabel">Job</label>
+                        <label class="form-label fw-bold" id="jobLabel">الوظيفة</label>
                         <select class="form-select" id="jobFilter" style="border-radius: 15px;">
                             <option value="" id="allJobsOption">All Jobs</option>
                         </select>
@@ -720,6 +722,17 @@
                             <option value="no_expiry" id="residenceNoExpiryOption">No Expiry Date</option>
                             <option value="missing" id="residenceMissingOption">Missing</option>
                         </select>
+                    </div>
+                </div>
+                
+                <!-- تحذير حول بيانات الإقامة والهوية -->
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div class="alert alert-info" role="alert" style="border-radius: 15px; font-size: 0.9em;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>ملاحظة:</strong> 
+                            <span id="dataNoticeText">إذا لم تظهر نتائج عند تطبيق فلاتر الإقامة أو الهوية الإماراتية، فهذا يعني أن هذه البيانات غير مكتملة لمعظم الموظفين في النظام.</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -1038,6 +1051,9 @@
                         <li class="nav-item" role="presentation">
                             <button class="nav-link" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button" role="tab">إدارة الأقسام</button>
                         </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="sample-data-tab" data-bs-toggle="tab" data-bs-target="#sample-data" type="button" role="tab">البيانات التجريبية</button>
+                        </li>
                     </ul>
                     
                     <div class="tab-content" id="managementTabContent">
@@ -1124,6 +1140,49 @@
                                             <!-- سيتم ملؤها بواسطة JavaScript -->
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- تبويب البيانات التجريبية -->
+                        <div class="tab-pane fade" id="sample-data" role="tabpanel">
+                            <div class="mt-3">
+                                <div class="alert alert-warning">
+                                    <h6><i class="fas fa-exclamation-triangle me-2"></i>إدارة البيانات التجريبية</h6>
+                                    <p class="mb-0">هذا القسم لإضافة بيانات تجريبية للإقامة والهوية الإماراتية لاختبار الفلاتر.</p>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6><i class="fas fa-plus-circle me-2"></i>إضافة بيانات تجريبية</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="text-muted">سيتم إضافة بيانات الإقامة والهوية الإماراتية عشوائياً لـ 20 موظف</p>
+                                                <button class="btn btn-primary" onclick="addSampleData()">
+                                                    <i class="fas fa-database me-2"></i>
+                                                    إضافة البيانات التجريبية
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6><i class="fas fa-info-circle me-2"></i>معلومات البيانات</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="dataStatsContainer">
+                                                    <p class="text-muted">تحميل الإحصائيات...</p>
+                                                </div>
+                                                <button class="btn btn-outline-info" onclick="loadDataStats()">
+                                                    <i class="fas fa-refresh me-2"></i>
+                                                    تحديث الإحصائيات
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1652,14 +1711,8 @@
             
             // إضافة مستمعات الأحداث للفلاتر
             
-            // البحث بالجنسية (input field) مع تأخير
-            let nationalityTimeout;
-            document.getElementById('nationalityFilter').addEventListener('input', function() {
-                clearTimeout(nationalityTimeout);
-                nationalityTimeout = setTimeout(() => {
-                    searchEmployees();
-                }, 500); // تأخير 500ms
-            });
+            // البحث بالجنسية (select dropdown)
+            document.getElementById('nationalityFilter').addEventListener('change', searchEmployees);
             
             // باقي الفلاتر (select elements)
             document.getElementById('companyFilter').addEventListener('change', searchEmployees);
@@ -1944,8 +1997,34 @@
                 const data = await response.json();
                 console.log('📊 Filters data received:', data);
                 
-                // ملاحظة: حقل الجنسية أصبح input text وليس select
-                // لذا لا نحتاج لتحميل قائمة الجنسيات
+                // تحميل قائمة الجنسيات
+                const nationalitySelect = document.getElementById('nationalityFilter');
+                const nationalityCodeSelect = document.getElementById('nationalityCode');
+                
+                // تنظيف الخيارات القديمة
+                nationalitySelect.innerHTML = '<option value="">جميع الجنسيات</option>';
+                if (nationalityCodeSelect) {
+                    nationalityCodeSelect.innerHTML = '<option value="">اختر الجنسية</option>';
+                }
+                
+                data.nationalities.forEach(nationality => {
+                    const option1 = document.createElement('option');
+                    option1.value = nationality.code;
+                    option1.textContent = `${nationality.name_ar} (${nationality.name_en})`;
+                    // إضافة مؤشر للجنسيات الموجودة فعلياً في قاعدة البيانات
+                    if (!nationality.in_database) {
+                        option1.style.color = '#999';
+                        option1.title = 'غير موجود في قاعدة البيانات';
+                    }
+                    nationalitySelect.appendChild(option1);
+                    
+                    if (nationalityCodeSelect) {
+                        const option2 = document.createElement('option');
+                        option2.value = nationality.code;
+                        option2.textContent = `${nationality.name_ar} (${nationality.name_en})`;
+                        nationalityCodeSelect.appendChild(option2);
+                    }
+                });
                 
                 // تحميل قائمة الشركات
                 const companySelect = document.getElementById('companyFilter');
@@ -2477,10 +2556,28 @@
                 loadingIndicator.style.display = 'none';
                 
                 if (data.employees.length === 0) {
+                    // التحقق من نوع الفلتر المطبق
+                    const emiratesFilter = document.getElementById('emiratesIdStatusFilter').value;
+                    const residenceFilter = document.getElementById('residenceStatusFilter').value;
+                    
+                    let noResultsMessage = '';
+                    if (emiratesFilter || residenceFilter) {
+                        noResultsMessage = currentLanguage === 'ar' 
+                            ? `<div class="alert alert-warning mt-3">
+                                <strong>تنبيه:</strong> لا توجد نتائج لفلاتر الإقامة أو الهوية الإماراتية المحددة. 
+                                هذا قد يعني أن هذه البيانات غير مكتملة في النظام.
+                              </div>`
+                            : `<div class="alert alert-warning mt-3">
+                                <strong>Notice:</strong> No results for the selected residence or Emirates ID filters. 
+                                This may indicate that this data is incomplete in the system.
+                              </div>`;
+                    }
+                    
                     resultsContainer.innerHTML = `
                         <div class="text-center text-muted py-5">
                             <h5>${currentLanguage === 'ar' ? 'لم يتم العثور على أي موظفين' : 'No employees found'}</h5>
                             <p>${currentLanguage === 'ar' ? 'جرب تعديل معايير البحث' : 'Try adjusting your search criteria'}</p>
+                            ${noResultsMessage}
                         </div>
                     `;
                     return;
@@ -3297,10 +3394,18 @@
                 const detailsData = await detailsResponse.json();
 
                 if (detailsData.employees.length === 0) {
-                    showNotification(
-                        currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير' : 'No results to export',
-                        'warning'
-                    );
+                    // التحقق من نوع الفلتر المطبق
+                    const emiratesFilter = document.getElementById('emiratesIdStatusFilter').value;
+                    const residenceFilter = document.getElementById('residenceStatusFilter').value;
+                    
+                    let message = currentLanguage === 'ar' ? 'لا توجد نتائج للتصدير' : 'No results to export';
+                    if (emiratesFilter || residenceFilter) {
+                        message += currentLanguage === 'ar' 
+                            ? ' - قد تكون بيانات الإقامة أو الهوية الإماراتية غير مكتملة'
+                            : ' - Residence or Emirates ID data may be incomplete';
+                    }
+                    
+                    showNotification(message, 'warning');
                     return;
                 }
 
@@ -3436,6 +3541,7 @@
             loadCompaniesData();
             loadJobsData();
             loadDepartmentsData();
+            loadDataStats(); // تحميل إحصائيات البيانات
             managementModal.show();
         }
 
@@ -3938,6 +4044,66 @@
                 }
             } catch (error) {
                 console.error('Error loading departments:', error);
+            }
+        }
+
+        // إضافة بيانات تجريبية
+        async function addSampleData() {
+            try {
+                showNotification('جاري إضافة البيانات التجريبية...', 'info');
+                
+                const response = await fetch('/api/add-sample-data', {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.status === 401) {
+                    localStorage.removeItem('authToken');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification(result.message, 'success');
+                    loadDataStats(); // تحديث الإحصائيات
+                    searchEmployees(); // تحديث نتائج البحث
+                } else {
+                    showNotification(result.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error adding sample data:', error);
+                showNotification('خطأ في إضافة البيانات التجريبية', 'error');
+            }
+        }
+
+        // تحميل إحصائيات البيانات
+        async function loadDataStats() {
+            try {
+                const response = await fetch('/api/debug-filters');
+                const data = await response.json();
+                
+                const container = document.getElementById('dataStatsContainer');
+                container.innerHTML = `
+                    <div class="mb-2">
+                        <strong>إجمالي الموظفين:</strong> ${data.statistics.total_employees}
+                    </div>
+                    <div class="mb-2">
+                        <strong>الهوية الإماراتية:</strong>
+                        <br><small>موجودة: ${data.statistics.emirates_id.exists}</small>
+                        <br><small>مفقودة: ${data.statistics.emirates_id.missing}</small>
+                    </div>
+                    <div class="mb-2">
+                        <strong>الإقامة:</strong>
+                        <br><small>موجودة: ${data.statistics.residence.exists}</small>
+                        <br><small>مفقودة: ${data.statistics.residence.missing}</small>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading data stats:', error);
+                document.getElementById('dataStatsContainer').innerHTML = 
+                    '<p class="text-danger">خطأ في تحميل الإحصائيات</p>';
             }
         }
     </script>

@@ -45,7 +45,7 @@ def check_mongodb_connection():
     
     try:
         # اختبار بسيط للاتصال
-        mongo.db.employees.find_one()
+        mongo.db.admin.command('ping')
         return True, "MongoDB connection is healthy"
     except Exception as e:
         return False, f"MongoDB connection error: {str(e)}"
@@ -227,6 +227,122 @@ def init_sample_departments():
         logger.error(f"❌ Error creating sample departments: {e}")
         print(f"❌ خطأ في إنشاء الأقسام التجريبية: {e}")
 
+@app.route('/api/debug-filters', methods=['GET'])
+def debug_filters():
+    """فحص حالة بيانات الفلاتر في قاعدة البيانات"""
+    try:
+        # إحصائيات البيانات
+        total_employees = mongo.db.employees.count_documents({})
+        
+        # إحصائيات الهوية الإماراتية
+        emirates_id_exists = mongo.db.employees.count_documents({
+            'emirates_id': {'$exists': True, '$ne': None, '$ne': ''}
+        })
+        emirates_id_missing = mongo.db.employees.count_documents({
+            '$or': [
+                {'emirates_id': {'$exists': False}},
+                {'emirates_id': None},
+                {'emirates_id': ''}
+            ]
+        })
+        
+        # إحصائيات الإقامة
+        residence_exists = mongo.db.employees.count_documents({
+            'residence_no': {'$exists': True, '$ne': None, '$ne': ''}
+        })
+        residence_missing = mongo.db.employees.count_documents({
+            '$or': [
+                {'residence_no': {'$exists': False}},
+                {'residence_no': None},
+                {'residence_no': ''}
+            ]
+        })
+        
+        # عينة من البيانات
+        sample_data = list(mongo.db.employees.find({}, {
+            'staff_no': 1,
+            'staff_name': 1,
+            'emirates_id': 1,
+            'emirates_id_expiry': 1,
+            'residence_no': 1,
+            'residence_expiry_date': 1
+        }).limit(10))
+        
+        return jsonify({
+            'statistics': {
+                'total_employees': total_employees,
+                'emirates_id': {
+                    'exists': emirates_id_exists,
+                    'missing': emirates_id_missing
+                },
+                'residence': {
+                    'exists': residence_exists, 
+                    'missing': residence_missing
+                }
+            },
+            'sample_data': sample_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in debug_filters: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/add-sample-data', methods=['POST'])
+def add_sample_data():
+    """إضافة بيانات تجريبية للاختبار"""
+    try:
+        from datetime import datetime, timedelta
+        import random
+        
+        # الحصول على عينة من الموظفين الحاليين
+        existing_employees = list(mongo.db.employees.find({}).limit(20))
+        
+        updates_count = 0
+        
+        for i, emp in enumerate(existing_employees):
+            update_data = {}
+            
+            # إضافة بيانات الهوية الإماراتية (50% احتمال)
+            if i % 2 == 0:
+                update_data['emirates_id'] = f"784-{random.randint(1990, 2010)}-{random.randint(1000000, 9999999)}-{random.randint(1, 9)}"
+                # إضافة تاريخ انتهاء (بعضها منتهي، بعضها صالح)
+                if i % 4 == 0:  # 25% منتهية
+                    update_data['emirates_id_expiry'] = datetime.now() - timedelta(days=random.randint(1, 365))
+                elif i % 4 == 1:  # 25% تنتهي قريباً
+                    update_data['emirates_id_expiry'] = datetime.now() + timedelta(days=random.randint(1, 89))
+                else:  # 50% صالحة
+                    update_data['emirates_id_expiry'] = datetime.now() + timedelta(days=random.randint(91, 1095))
+            
+            # إضافة بيانات الإقامة (60% احتمال)
+            if i % 3 != 0:  # 66% لديهم إقامة
+                update_data['residence_no'] = f"{random.randint(100, 999)}-{random.randint(1990, 2010)}-{random.randint(1000000, 9999999)}"
+                # إضافة تواريخ الإقامة
+                if i % 5 == 0:  # 20% منتهية
+                    update_data['residence_expiry_date'] = datetime.now() - timedelta(days=random.randint(1, 365))
+                    update_data['residence_issue_date'] = datetime.now() - timedelta(days=random.randint(366, 1095))
+                elif i % 5 == 1:  # 20% تنتهي قريباً
+                    update_data['residence_expiry_date'] = datetime.now() + timedelta(days=random.randint(1, 89))
+                    update_data['residence_issue_date'] = datetime.now() - timedelta(days=random.randint(365, 730))
+                else:  # 60% صالحة
+                    update_data['residence_expiry_date'] = datetime.now() + timedelta(days=random.randint(91, 1095))
+                    update_data['residence_issue_date'] = datetime.now() - timedelta(days=random.randint(30, 365))
+            
+            if update_data:
+                mongo.db.employees.update_one(
+                    {'_id': emp['_id']},
+                    {'$set': update_data}
+                )
+                updates_count += 1
+        
+        return jsonify({
+            'message': f'تم تحديث {updates_count} موظف بنجاح',
+            'updated_count': updates_count
+        })
+        
+    except Exception as e:
+        logger.error(f"Error adding sample data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # API للتحقق من حالة النظام
 @app.route('/api/health')
 def health_check():
@@ -344,110 +460,144 @@ def verify_token_route():
 # API للبحث عن الموظفين
 @app.route('/api/search')
 def search_employees():
-    query = request.args.get('query', '').strip()
-    nationality = request.args.get('nationality', '')
-    company = request.args.get('company', '')
-    job = request.args.get('job', '')
-    department = request.args.get('department', '')
-    passport_status = request.args.get('passport_status', '')
-    card_status = request.args.get('card_status', '')
-    emirates_id_status = request.args.get('emirates_id_status', '')
-    residence_status = request.args.get('residence_status', '')
-    page = int(request.args.get('page', 1))
-    per_page = int(request.args.get('per_page', 20))
-    
-    # بناء الاستعلام
-    filter_query = {}
-    
-    if query:
-        # البحث المحسن باستخدام فهرس النص - أسرع 10x من regex
-        filter_query['$text'] = {'$search': query}
-    
-    if nationality:
-        # البحث الذكي في حقل الجنسية - يدعم الأسماء الكاملة والرموز
-        matching_nationality_codes = []
-        for code, names in NATIONALITIES.items():
-            en_match = nationality.lower() in names['en'].lower()
-            ar_match = nationality.lower() in names['ar'].lower()
-            code_match = nationality.lower() in code.lower()
-            
-            if en_match or ar_match or code_match:
-                matching_nationality_codes.append(code)
+    try:
+        # التحقق من حالة اتصال MongoDB أولاً
+        if not mongo:
+            logger.error("MongoDB connection not available")
+            return jsonify({'error': 'Database connection unavailable', 'employees': [], 'total': 0}), 500
         
-        if matching_nationality_codes:
-            # البحث بالرموز المطابقة
-            filter_query['nationality_code'] = {'$in': matching_nationality_codes}
-        else:
-            # البحث العادي إذا لم توجد مطابقات
-            filter_query['nationality_code'] = {'$regex': nationality, '$options': 'i'}
-    
-    
-    if company:
-        # تحسين البحث في الشركة لدعم النص الجزئي
-        filter_query['company_code'] = {'$regex': company, '$options': 'i'}
-    
-    if job:
+        query = request.args.get('query', '').strip()
+        nationality = request.args.get('nationality', '')
+        company = request.args.get('company', '')
+        job = request.args.get('job', '')
+        department = request.args.get('department', '')
+        passport_status = request.args.get('passport_status', '')
+        card_status = request.args.get('card_status', '')
+        emirates_id_status = request.args.get('emirates_id_status', '')
+        residence_status = request.args.get('residence_status', '')
+        
         try:
-            filter_query['job_code'] = int(job)
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', 20))
         except (ValueError, TypeError):
-            pass  # تجاهل القيم غير الصحيحة
+            page = 1
+            per_page = 20
     
-    if department:
-        filter_query['department_code'] = {'$regex': department, '$options': 'i'}
+        # بناء الاستعلام
+        filter_query = {}
+        
+        if query:
+            # البحث المحسن باستخدام regex للدعم الأفضل للنصوص العربية والإنجليزية
+            regex_pattern = '.*' + re.escape(query) + '.*'
+            filter_query['$or'] = [
+                {'staff_name': {'$regex': regex_pattern, '$options': 'i'}},
+                {'staff_name_ara': {'$regex': regex_pattern, '$options': 'i'}},
+                {'staff_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'pass_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'card_no': {'$regex': regex_pattern, '$options': 'i'}},
+                {'emirates_id': {'$regex': regex_pattern, '$options': 'i'}},
+                {'residence_no': {'$regex': regex_pattern, '$options': 'i'}}
+            ]
+        
+        # إضافة البحث النصي كخيار احتياطي إذا كان متاحاً
+        try:
+            # التحقق من وجود text index
+            indexes = mongo.db.employees.list_indexes()
+            has_text_index = any('_text_' in idx.get('name', '') for idx in indexes)
+            
+            if has_text_index:
+                # إضافة البحث النصي مع البحث بـ regex
+                text_query = {'$text': {'$search': query}}
+                filter_query = {'$or': [filter_query, text_query]}
+        except Exception as e:
+            logger.warning(f"Text search not available: {e}")
+            # سنستخدم فقط regex search
     
-    # إضافة فلاتر حالة الجواز والبطاقة لقاعدة البيانات مباشرة
-    if passport_status == 'missing':
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({'$or': [{'pass_no': {'$exists': False}}, {'pass_no': None}, {'pass_no': ''}]})
-    elif passport_status == 'available':
-        filter_query['pass_no'] = {'$exists': True, '$ne': None, '$ne': ''}
-    
-    if card_status == 'missing':
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({'$or': [{'card_no': {'$exists': False}}, {'card_no': None}, {'card_no': ''}]})
-    elif card_status == 'expired':
-        # البطاقات المنتهية الصلاحية (لها تاريخ انتهاء ومنتهية)
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({
-            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
-            'card_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
-        })
-    elif card_status == 'expiring_soon':
-        # البطاقات التي ستنتهي خلال 90 يوم
-        future_date = datetime.now() + timedelta(days=90)
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({
-            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
-            'card_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
-        })
-    elif card_status == 'valid':
-        # البطاقات السارية (لها تاريخ انتهاء ولا تزال سارية)
-        future_date = datetime.now() + timedelta(days=90)
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({
-            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
-            'card_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
-        })
-    elif card_status == 'no_expiry':
-        # البطاقات بدون تاريخ انتهاء (لها رقم بطاقة ولكن لا يوجد تاريخ انتهاء)
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({
-            'card_no': {'$exists': True, '$ne': None, '$ne': ''},
-            '$or': [{'card_expiry_date': {'$exists': False}}, {'card_expiry_date': None}]
-        })
-    
-    # حساب pagination
-    skip = (page - 1) * per_page
-    
-    # إضافة فلاتر حالة الهوية الإماراتية
-    if emirates_id_status == 'missing':
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({'$or': [{'emirates_id': {'$exists': False}}, {'emirates_id': None}, {'emirates_id': ''}]})
-    elif emirates_id_status == 'expired':
-        filter_query['$and'] = filter_query.get('$and', [])
-        filter_query['$and'].append({
-            'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
-            'emirates_id_expiry': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+        if nationality:
+            # البحث الذكي في حقل الجنسية - يدعم الأسماء الكاملة والرموز
+            matching_nationality_codes = []
+            for code, names in NATIONALITIES.items():
+                en_match = nationality.lower() in names['en'].lower()
+                ar_match = nationality.lower() in names['ar'].lower()
+                code_match = nationality.lower() in code.lower()
+                
+                if en_match or ar_match or code_match:
+                    matching_nationality_codes.append(code)
+            
+            if matching_nationality_codes:
+                # البحث بالرموز المطابقة
+                filter_query['nationality_code'] = {'$in': matching_nationality_codes}
+            else:
+                # البحث العادي إذا لم توجد مطابقات
+                filter_query['nationality_code'] = {'$regex': nationality, '$options': 'i'}
+        
+        
+        if company:
+            # تحسين البحث في الشركة لدعم النص الجزئي
+            filter_query['company_code'] = {'$regex': company, '$options': 'i'}
+        
+        if job:
+            try:
+                filter_query['job_code'] = int(job)
+            except (ValueError, TypeError):
+                pass  # تجاهل القيم غير الصحيحة
+        
+        if department:
+            filter_query['department_code'] = {'$regex': department, '$options': 'i'}
+        
+        # إضافة فلاتر حالة الجواز والبطاقة لقاعدة البيانات مباشرة
+        if passport_status == 'missing':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({'$or': [{'pass_no': {'$exists': False}}, {'pass_no': None}, {'pass_no': ''}]})
+        elif passport_status == 'available':
+            filter_query['pass_no'] = {'$exists': True, '$ne': None, '$ne': ''}
+        
+        if card_status == 'missing':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({'$or': [{'card_no': {'$exists': False}}, {'card_no': None}, {'card_no': ''}]})
+        elif card_status == 'expired':
+            # البطاقات المنتهية الصلاحية (لها تاريخ انتهاء ومنتهية)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'card_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
+            })
+        elif card_status == 'expiring_soon':
+            # البطاقات التي ستنتهي خلال 90 يوم
+            future_date = datetime.now() + timedelta(days=90)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'card_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
+            })
+        elif card_status == 'valid':
+            # البطاقات السارية (لها تاريخ انتهاء ولا تزال سارية)
+            future_date = datetime.now() + timedelta(days=90)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                'card_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
+            })
+        elif card_status == 'no_expiry':
+            # البطاقات بدون تاريخ انتهاء (لها رقم بطاقة ولكن لا يوجد تاريخ انتهاء)
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'card_no': {'$exists': True, '$ne': None, '$ne': ''},
+                '$or': [{'card_expiry_date': {'$exists': False}}, {'card_expiry_date': None}]
+            })
+        
+        # حساب pagination
+        skip = (page - 1) * per_page
+        
+        # إضافة فلاتر حالة الهوية الإماراتية
+        if emirates_id_status == 'missing':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({'$or': [{'emirates_id': {'$exists': False}}, {'emirates_id': None}, {'emirates_id': ''}]})
+        elif emirates_id_status == 'expired':
+            filter_query['$and'] = filter_query.get('$and', [])
+            filter_query['$and'].append({
+                'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
+                'emirates_id_expiry': {'$exists': True, '$ne': None, '$lt': datetime.now()}
         })
     elif emirates_id_status == 'expiring_soon':
         future_date = datetime.now() + timedelta(days=90)
@@ -574,6 +724,18 @@ def search_employees():
         'has_next': page < pages,
         'has_prev': page > 1
     })
+    
+    except Exception as e:
+        logger.error(f"Error in search_employees: {str(e)}")
+        return jsonify({
+            'error': f'خطأ في البحث: {str(e)}',
+            'employees': [],
+            'total': 0,
+            'pages': 0,
+            'current_page': 1,
+            'has_next': False,
+            'has_prev': False
+        }), 500
 
 # API لإضافة موظف جديد
 @app.route('/api/employees', methods=['POST'])
@@ -838,13 +1000,21 @@ def get_statistics():
                            for item in mongo.db.employees.aggregate(department_pipeline) 
                            if item['_id'] is not None}
         
-        # إحصائيات حالة الجوازات والبطاقات
+        # إحصائيات حالة الجوازات والبطاقات والهوية والإقامة
         employees = list(mongo.db.employees.find())
         passport_missing = sum(1 for emp in employees if not emp.get('pass_no'))
         cards_missing = sum(1 for emp in employees if not emp.get('card_no'))
+        emirates_id_missing = sum(1 for emp in employees if not emp.get('emirates_id'))
+        residence_missing = sum(1 for emp in employees if not emp.get('residence_no'))
         
         cards_expired = 0
+        emirates_id_expired = 0
+        residence_expired = 0
+        
+        current_time = datetime.now(timezone.utc)
+        
         for emp in employees:
+            # فحص انتهاء البطاقات
             if emp.get('card_expiry_date'):
                 expiry_date = emp['card_expiry_date']
                 if isinstance(expiry_date, str):
@@ -852,8 +1022,28 @@ def get_statistics():
                 # التأكد من أن expiry_date يحتوي على timezone
                 if expiry_date.tzinfo is None:
                     expiry_date = expiry_date.replace(tzinfo=timezone.utc)
-                if expiry_date < datetime.now(timezone.utc):
+                if expiry_date < current_time:
                     cards_expired += 1
+            
+            # فحص انتهاء الهوية الإماراتية
+            if emp.get('emirates_id_expiry'):
+                expiry_date = emp['emirates_id_expiry']
+                if isinstance(expiry_date, str):
+                    expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                if expiry_date < current_time:
+                    emirates_id_expired += 1
+            
+            # فحص انتهاء الإقامة
+            if emp.get('residence_expiry_date'):
+                expiry_date = emp['residence_expiry_date']
+                if isinstance(expiry_date, str):
+                    expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                if expiry_date < current_time:
+                    residence_expired += 1
         
         return jsonify({
             'total_employees': total_employees,
@@ -863,7 +1053,11 @@ def get_statistics():
             'department_stats': department_stats,
             'passport_missing': passport_missing,
             'cards_missing': cards_missing,
-            'cards_expired': cards_expired
+            'cards_expired': cards_expired,
+            'emirates_id_missing': emirates_id_missing,
+            'emirates_id_expired': emirates_id_expired,
+            'residence_missing': residence_missing,
+            'residence_expired': residence_expired
         })
         
     except Exception as e:
@@ -881,148 +1075,6 @@ def get_statistics():
             'cards_expired': 0
         }), 500
 
-# دالة مساعدة لربط أسماء الدول العربية برموز ISO
-def get_nationality_info(arabic_name):
-    """
-    دالة لتحويل أسماء الدول العربية إلى معلومات مفصلة
-    """
-    # قاموس ربط أسماء الدول العربية برموز ISO
-    arabic_to_iso = {
-        'الإمارات': 'AE',
-        'الامارات': 'AE',
-        'السعودية': 'SA',
-        'المملكة العربية السعودية': 'SA',
-        'مصر': 'EG',
-        'المصر': 'EG',
-        'مصري': 'EG',
-        'الهند': 'IN',
-        'الھند': 'IN',
-        'هندي': 'IN',
-        'هند': 'IN',
-        'الفلبين': 'PH',
-        'الفلبین': 'PH',
-        'فلبيني': 'PH',
-        'فلبين': 'PH',
-        'باكستان': 'PK',
-        'باكستاني': 'PK',
-        'ايران': 'IR',
-        'ایران': 'IR',
-        'إيران': 'IR',
-        'ايراني': 'IR',
-        'إيراني': 'IR',
-        'بنجلاديش': 'BD',
-        'بنغلاديش': 'BD',
-        'بنجلادشي': 'BD',
-        'السودان': 'SD',
-        'سوداني': 'SD',
-        'سودان': 'SD',
-        'سوري': 'SY',
-        'سورية': 'SY',
-        'سوريا': 'SY',
-        'سوریا': 'SY',
-        'لبنان': 'LB',
-        'لبناني': 'LB',
-        'الأردن': 'JO',
-        'اردن': 'JO',
-        'أردني': 'JO',
-        'اردني': 'JO',
-        'العراق': 'IQ',
-        'عراق': 'IQ',
-        'عراقي': 'IQ',
-        'الكويت': 'KW',
-        'كويت': 'KW',
-        'كويتي': 'KW',
-        'قطر': 'QA',
-        'قطري': 'QA',
-        'البحرين': 'BH',
-        'بحرين': 'BH',
-        'بحريني': 'BH',
-        'عمان': 'OM',
-        'عماني': 'OM',
-        'اليمن': 'YE',
-        'يمن': 'YE',
-        'يمني': 'YE',
-        'المغرب': 'MA',
-        'مغرب': 'MA',
-        'مغربي': 'MA',
-        'الجزائر': 'DZ',
-        'جزائر': 'DZ',
-        'جزائري': 'DZ',
-        'تونس': 'TN',
-        'تونسي': 'TN',
-        'ليبيا': 'LY',
-        'ليبي': 'LY',
-        'اثيوبيا': 'ET',
-        'إثيوبيا': 'ET',
-        'اثيوبي': 'ET',
-        'اغندا': 'UG',
-        'أوغندا': 'UG',
-        'افغانستان': 'AF',
-        'أفغانستان': 'AF',
-        'افغاني': 'AF',
-        'اندونسيا': 'ID',
-        'إندونيسيا': 'ID',
-        'اندونيسي': 'ID',
-        'تركيا': 'TR',
-        'تركیا': 'TR',
-        'تركي': 'TR',
-        'روسيا': 'RU',
-        'روسی': 'RU',
-        'روسي': 'RU',
-        'الصين': 'CN',
-        'صين': 'CN',
-        'صيني': 'CN',
-        'اليابان': 'JP',
-        'يابان': 'JP',
-        'ياباني': 'JP',
-        'كوريا': 'KR',
-        'كوري': 'KR',
-        'بريطانيا': 'GB',
-        'بريطاني': 'GB',
-        'انجلترا': 'GB',
-        'انجليزي': 'GB',
-        'فرنسا': 'FR',
-        'فرنسي': 'FR',
-        'المانيا': 'DE',
-        'ألمانيا': 'DE',
-        'الماني': 'DE',
-        'ألماني': 'DE',
-        'ايطاليا': 'IT',
-        'إيطاليا': 'IT',
-        'ايطالي': 'IT',
-        'اسبانيا': 'ES',
-        'إسبانيا': 'ES',
-        'اسباني': 'ES',
-        'امريكا': 'US',
-        'أمريكا': 'US',
-        'امريكي': 'US',
-        'كندا': 'CA',
-        'كندي': 'CA',
-        'استراليا': 'AU',
-        'أستراليا': 'AU',
-        'استرالي': 'AU'
-    }
-    
-    # البحث عن رمز ISO المقابل
-    iso_code = arabic_to_iso.get(arabic_name.strip())
-    
-    if iso_code and iso_code in NATIONALITIES:
-        return {
-            'code': iso_code,
-            'name_en': NATIONALITIES[iso_code]['en'],
-            'name_ar': NATIONALITIES[iso_code]['ar'],
-            'original_db_name': arabic_name
-        }
-    else:
-        # إذا لم نجد تطابق، نعيد الاسم العربي كما هو
-        return {
-            'code': arabic_name,
-            'name_en': arabic_name,
-            'name_ar': arabic_name,
-            'original_db_name': arabic_name
-        }
-
-
 # API للحصول على قوائم الفلاتر - بدون مصادقة
 @app.route('/api/filters')
 def get_filters():
@@ -1037,51 +1089,38 @@ def get_filters():
                 'departments': []
             }), 503
         
-        # جلب الجنسيات الموجودة فعلياً في قاعدة البيانات
-        nationality_codes_in_db = set(mongo.db.employees.distinct('nationality_code'))
-        nationality_codes_in_db = {code for code in nationality_codes_in_db if code}  # إزالة القيم الفارغة
+        nationality_codes = mongo.db.employees.distinct('nationality_code')
         
-        # إنشاء قائمة شاملة للجنسيات
+        # دمج أكواد الجنسيات الموجودة في قاعدة البيانات مع القاموس الكامل
+        existing_codes = set(code for code in nationality_codes if code)
+        all_nationality_codes = set(NATIONALITIES.keys())
+        
+        # استخدام جميع الجنسيات من القاموس + أي جنسيات إضافية في قاعدة البيانات
+        combined_codes = all_nationality_codes.union(existing_codes)
+        
+        # تحويل أكواد الجنسيات إلى أسماء كاملة
         nationalities = []
-        processed_iso_codes = set()
-        
-        # أولاً: معالجة الجنسيات الموجودة في قاعدة البيانات
-        for arabic_name in nationality_codes_in_db:
-            nationality_info = get_nationality_info(arabic_name)
-            iso_code = nationality_info['code']
-            
-            # تجنب التكرار للرموز المعيارية
-            if iso_code not in processed_iso_codes:
+        for code in combined_codes:
+            if code:  # تجاهل القيم الفارغة
                 nationalities.append({
-                    'code': arabic_name,  # استخدام الاسم العربي كما هو في DB للبحث
-                    'name_en': nationality_info['name_en'],
-                    'name_ar': nationality_info['name_ar'],
-                    'in_database': True
-                })
-                processed_iso_codes.add(iso_code)
-        
-        # ثانياً: إضافة بقية الجنسيات من قاموس NATIONALITIES التي لم تتم معالجتها
-        for iso_code, names in NATIONALITIES.items():
-            if iso_code not in processed_iso_codes:
-                nationalities.append({
-                    'code': iso_code,
-                    'name_en': names['en'],
-                    'name_ar': names['ar'],
-                    'in_database': False
+                    'code': code,
+                    'name_en': get_nationality_name(code, 'en'),
+                    'name_ar': get_nationality_name(code, 'ar'),
+                    'in_database': code in existing_codes  # علامة للجنسيات الموجودة فعلياً
                 })
         
-        # ترتيب حسب الاسم العربي
-        nationalities.sort(key=lambda x: x['name_ar'])
+        # ترتيب حسب الاسم الإنجليزي
+        nationalities.sort(key=lambda x: x['name_en'])
         
         companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, 'company_name_eng': 1, '_id': 0}))
         jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, 'job_eng': 1, '_id': 0}).sort('job_code', 1))
-        departments = list(mongo.db.department.find({}, {'department_code': 1, 'department_name_ara': 1, 'department_name_eng': 1, '_id': 0}).sort('department_code', 1))
+        departments = list(mongo.db.departments.find({}, {'dept_code': 1, 'dept_name_ara': 1, 'dept_name_eng': 1, '_id': 0}).sort('dept_code', 1))
         
         return jsonify({
             'nationalities': nationalities,
             'companies': [{'code': c['company_code'], 'name': c['company_name_ara'], 'name_ara': c['company_name_ara'], 'name_eng': c.get('company_name_eng', c['company_name_ara'])} for c in companies],
             'jobs': [{'code': j['job_code'], 'name': j['job_ara'], 'name_ara': j['job_ara'], 'name_eng': j.get('job_eng', j['job_ara'])} for j in jobs],
-            'departments': [{'code': d['department_code'], 'name': d['department_name_ara'], 'name_ara': d['department_name_ara'], 'name_eng': d.get('department_name_eng', d['department_name_ara'])} for d in departments]
+            'departments': [{'code': d['dept_code'], 'name': d['dept_name_ara'], 'name_ara': d['dept_name_ara'], 'name_eng': d.get('dept_name_eng', d['dept_name_ara'])} for d in departments]
         })
     except Exception as e:
         logger.error(f"Error in get_filters: {e}")
@@ -1623,15 +1662,18 @@ def get_detailed_results():
         
         # إضافة فلاتر حالة الهوية الإماراتية
         if emirates_id_status == 'missing':
+            logger.info(f"Applying Emirates ID missing filter")
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({'$or': [{'emirates_id': {'$exists': False}}, {'emirates_id': None}, {'emirates_id': ''}]})
         elif emirates_id_status == 'expired':
+            logger.info(f"Applying Emirates ID expired filter")
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
                 'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
                 'emirates_id_expiry': {'$exists': True, '$ne': None, '$lt': datetime.now()}
             })
         elif emirates_id_status == 'expiring_soon':
+            logger.info(f"Applying Emirates ID expiring soon filter")
             future_date = datetime.now() + timedelta(days=90)
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
@@ -1639,6 +1681,7 @@ def get_detailed_results():
                 'emirates_id_expiry': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
             })
         elif emirates_id_status == 'valid':
+            logger.info(f"Applying Emirates ID valid filter")
             future_date = datetime.now() + timedelta(days=90)
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
@@ -1646,6 +1689,7 @@ def get_detailed_results():
                 'emirates_id_expiry': {'$exists': True, '$ne': None, '$gte': future_date}
             })
         elif emirates_id_status == 'no_expiry':
+            logger.info(f"Applying Emirates ID no expiry filter")
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
                 'emirates_id': {'$exists': True, '$ne': None, '$ne': ''},
@@ -1654,15 +1698,18 @@ def get_detailed_results():
         
         # إضافة فلاتر حالة الإقامة
         if residence_status == 'missing':
+            logger.info(f"Applying residence missing filter")
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({'$or': [{'residence_no': {'$exists': False}}, {'residence_no': None}, {'residence_no': ''}]})
         elif residence_status == 'expired':
+            logger.info(f"Applying residence expired filter")
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
                 'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
                 'residence_expiry_date': {'$exists': True, '$ne': None, '$lt': datetime.now()}
             })
         elif residence_status == 'expiring_soon':
+            logger.info(f"Applying residence expiring soon filter")
             future_date = datetime.now() + timedelta(days=90)
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
@@ -1670,6 +1717,7 @@ def get_detailed_results():
                 'residence_expiry_date': {'$exists': True, '$ne': None, '$gte': datetime.now(), '$lt': future_date}
             })
         elif residence_status == 'valid':
+            logger.info(f"Applying residence valid filter")
             future_date = datetime.now() + timedelta(days=90)
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
@@ -1677,6 +1725,7 @@ def get_detailed_results():
                 'residence_expiry_date': {'$exists': True, '$ne': None, '$gte': future_date}
             })
         elif residence_status == 'no_expiry':
+            logger.info(f"Applying residence no expiry filter")
             filter_query['$and'] = filter_query.get('$and', [])
             filter_query['$and'].append({
                 'residence_no': {'$exists': True, '$ne': None, '$ne': ''},
@@ -1687,6 +1736,22 @@ def get_detailed_results():
         try:
             employees = list(mongo.db.employees.find(filter_query))
             logger.info(f"Found {len(employees)} employees matching filter: {filter_query}")
+            
+            # إذا لم توجد نتائج مع الفلاتر المحددة، أعرض تحذير
+            if len(employees) == 0 and (emirates_id_status or residence_status):
+                logger.warning(f"No results found for emirates_id_status='{emirates_id_status}' or residence_status='{residence_status}' - this might indicate missing data")
+                
+                # اختبار إضافي: كم موظف لديه بيانات فعلية
+                emirates_with_data = mongo.db.employees.count_documents({
+                    'emirates_id': {'$exists': True, '$ne': None, '$ne': ''}
+                })
+                residence_with_data = mongo.db.employees.count_documents({
+                    'residence_no': {'$exists': True, '$ne': None, '$ne': ''}
+                })
+                total_count = mongo.db.employees.count_documents({})
+                
+                logger.info(f"Data availability: Emirates ID: {emirates_with_data}/{total_count}, Residence: {residence_with_data}/{total_count}")
+            
         except Exception as db_error:
             logger.error(f"Database query error: {str(db_error)}")
             return jsonify({'error': f'خطأ في قاعدة البيانات: {str(db_error)}'}), 500
@@ -1732,6 +1797,52 @@ def get_detailed_results():
                 emp_data['_id'] = str(emp_data['_id'])
             emp_data['passport_text'] = passport_text
             emp_data['card_text'] = card_text
+            
+            # حالة الهوية الإماراتية
+            if not emp.get('emirates_id'):
+                emirates_text = 'غير متوفر'
+            elif not emp.get('emirates_id_expiry'):
+                emirates_text = 'بدون تاريخ انتهاء'
+            else:
+                expiry_date = emp['emirates_id_expiry']
+                if isinstance(expiry_date, str):
+                    expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+                
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                
+                current_date = datetime.now(timezone.utc)
+                if expiry_date < current_date:
+                    emirates_text = 'منتهية'
+                elif expiry_date < current_date + timedelta(days=90):
+                    emirates_text = 'تنتهي قريباً'
+                else:
+                    emirates_text = 'سارية'
+            
+            emp_data['emirates_text'] = emirates_text
+            
+            # حالة الإقامة
+            if not emp.get('residence_no'):
+                residence_text = 'غير متوفر'
+            elif not emp.get('residence_expiry_date'):
+                residence_text = 'بدون تاريخ انتهاء'
+            else:
+                expiry_date = emp['residence_expiry_date']
+                if isinstance(expiry_date, str):
+                    expiry_date = datetime.fromisoformat(expiry_date.replace('Z', '+00:00'))
+                
+                if expiry_date.tzinfo is None:
+                    expiry_date = expiry_date.replace(tzinfo=timezone.utc)
+                
+                current_date = datetime.now(timezone.utc)
+                if expiry_date < current_date:
+                    residence_text = 'منتهية'
+                elif expiry_date < current_date + timedelta(days=90):
+                    residence_text = 'تنتهي قريباً'
+                else:
+                    residence_text = 'سارية'
+            
+            emp_data['residence_text'] = residence_text
             
             # تنسيق التواريخ
             if emp_data.get('card_expiry_date'):
@@ -1796,8 +1907,10 @@ def export_filtered_results():
                 'حالة البطاقة': emp.get('card_text', ''),
                 'تاريخ انتهاء البطاقة': emp.get('card_expiry_date', 'غير محدد'),
                 'رقم الهوية الإماراتية': emp.get('emirates_id', 'غير متوفر'),
+                'حالة الهوية الإماراتية': emp.get('emirates_text', 'غير محدد'),
                 'تاريخ انتهاء الهوية': emp.get('emirates_id_expiry', 'غير محدد'),
                 'رقم الإقامة': emp.get('residence_no', 'غير متوفر'),
+                'حالة الإقامة': emp.get('residence_text', 'غير محدد'),
                 'تاريخ إصدار الإقامة': emp.get('residence_issue_date', 'غير محدد'),
                 'تاريخ انتهاء الإقامة': emp.get('residence_expiry_date', 'غير محدد'),
                 'تاريخ الإنشاء': emp.get('create_date_time', '')

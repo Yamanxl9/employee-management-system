@@ -1,0 +1,37 @@
+[
+  {
+    "Company_code": "BRG",
+    "CompanyName_eng": "Middle East Bridge Trading",
+    "CompanyName_ara": "میدل ایست بریدج للتجارة العامة (ش.ذ.م.م)"
+  },
+  {
+    "Company_code": "HON",
+    "CompanyName_eng": "Honda Resources",
+    "CompanyName_ara": "موارد هوندا"
+  },
+  {
+    "Company_code": "LIV",
+    "CompanyName_eng": "Liverage Trading",
+    "CompanyName_ara": "ليفردج للتجارة"
+  },
+  {
+    "Company_code": "MNT",
+    "CompanyName_eng": "Mınt Art Galery",
+    "CompanyName_ara": "مينت آرت جالاري"
+  },
+  {
+    "Company_code": "SQF",
+    "CompanyName_eng": "SQFT General Store",
+    "CompanyName_ara": "اس كيو اف تي للمخازن العامة"
+  },
+  {
+    "Company_code": "TAM",
+    "CompanyName_eng": "Tamayoz",
+    "CompanyName_ara": "تميز"
+  },
+  {
+    "Company_code": "UNI",
+    "CompanyName_eng": "UNI FOOD GENERAL TRADING LLC",
+    "CompanyName_ara": "يونيفود للتجارة"
+  }
+]

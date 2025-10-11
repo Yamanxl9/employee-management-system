@@ -1037,41 +1037,27 @@ def get_filters():
                 'departments': []
             }), 503
         
-        # جلب الجنسيات الموجودة فعلياً في قاعدة البيانات
+        # جلب الجنسيات من مجموعة countries في MongoDB
+        countries_cursor = mongo.db.countries.find({}, {'_id': 0}).sort('name_ar', 1)
+        nationalities = []
+        
+        # جلب الجنسيات الموجودة فعلياً في قاعدة البيانات للموظفين
         nationality_codes_in_db = set(mongo.db.employees.distinct('nationality_code'))
         nationality_codes_in_db = {code for code in nationality_codes_in_db if code}  # إزالة القيم الفارغة
         
-        # إنشاء قائمة شاملة للجنسيات
-        nationalities = []
-        processed_iso_codes = set()
-        
-        # أولاً: معالجة الجنسيات الموجودة في قاعدة البيانات
-        for arabic_name in nationality_codes_in_db:
-            nationality_info = get_nationality_info(arabic_name)
-            iso_code = nationality_info['code']
+        for country in countries_cursor:
+            # التحقق من وجود الجنسية في قاعدة بيانات الموظفين
+            in_database = (country.get('name_ar') in nationality_codes_in_db or 
+                          country.get('name_en') in nationality_codes_in_db or
+                          country.get('code') in nationality_codes_in_db)
             
-            # تجنب التكرار للرموز المعيارية
-            if iso_code not in processed_iso_codes:
-                nationalities.append({
-                    'code': arabic_name,  # استخدام الاسم العربي كما هو في DB للبحث
-                    'name_en': nationality_info['name_en'],
-                    'name_ar': nationality_info['name_ar'],
-                    'in_database': True
-                })
-                processed_iso_codes.add(iso_code)
-        
-        # ثانياً: إضافة بقية الجنسيات من قاموس NATIONALITIES التي لم تتم معالجتها
-        for iso_code, names in NATIONALITIES.items():
-            if iso_code not in processed_iso_codes:
-                nationalities.append({
-                    'code': iso_code,
-                    'name_en': names['en'],
-                    'name_ar': names['ar'],
-                    'in_database': False
-                })
-        
-        # ترتيب حسب الاسم العربي
-        nationalities.sort(key=lambda x: x['name_ar'])
+            nationalities.append({
+                'code': country.get('name_ar', country.get('name_en', country.get('code', ''))),
+                'name_en': country.get('name_en', ''),
+                'name_ar': country.get('name_ar', ''),
+                'iso_code': country.get('code', ''),
+                'in_database': in_database
+            })
         
         companies = list(mongo.db.companies.find({}, {'company_code': 1, 'company_name_ara': 1, 'company_name_eng': 1, '_id': 0}))
         jobs = list(mongo.db.jobs.find({}, {'job_code': 1, 'job_ara': 1, 'job_eng': 1, '_id': 0}).sort('job_code', 1))
